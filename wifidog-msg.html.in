@@ -1,0 +1,110 @@
+<html>
+<head>
+<title>$title</title>
+<meta HTTP-EQUIV='Pragma' CONTENT='no-cache'>
+<META http-equiv="Content-Type" content="text/html; charset=utf-8">
+
+<style>
+body {
+  margin: 10px 60px 0 60px; 
+  font-family : bitstream vera sans, sans-serif;
+  color: Black;
+  background-color: #F5F5F5;
+}
+
+a {
+  color: Black;
+}
+
+a:active {
+  color: #15A0F5;
+}
+
+a:link {
+  color: Black;
+}
+
+a:visited {
+  color: #15A0F5;
+}
+
+#header {
+  height: 30px;
+  background-color: #15A0F5;
+  padding: 20px;
+  font-size: 20pt;
+  text-align: center;
+  border: 2px solid #C3C3C3;
+  border-bottom: 0;
+  color: White;  
+}
+
+#header h2 {
+  margin: 0pt;
+}
+
+#menu {
+  width: 200px;
+  float: right;
+  background-color: #F2F2F2;
+  border: 2px solid #C3C3C3;
+  font-size: 80%;
+  min-height: 300px;
+}
+
+#menu h2 {
+  margin: 0;
+  background-color: #15A0F5;
+  text-align: center;
+  color: White;
+}
+
+#copyright {
+}
+
+#content {
+  padding: 20px;
+  border: 2px solid #C3C3C3;
+  min-height: 300px;
+}
+</style>
+
+</head>
+
+<body>
+
+<div id="header">
+    <h2>$title</h2>
+</div>
+
+<div id="menu">
+
+
+    <h2>Info</h2>
+    <ul>
+    <li>Version: @WIFIDOG_VERSION@
+
+    <li>Node ID: $nodeID
+    </ul>
+    <br>
+
+    <h2>Menu</h2>
+    <ul>
+    <li><a href='/wifidog/status'>WiFiDog Status</a>
+    <li><a href='/wifidog/about'>About WiFiDog</a>
+    <li><a href='http://www.wifidog.org'>WiFiDog's homepage</a>
+    </ul>
+</div>
+
+<div id="content">
+<h2>$message</h2>
+</div>
+
+<div id="copyright">
+Copyright (C) 2004-2015.  This software is released under the GNU GPL license.
+</div>
+
+
+</body>
+</html>
+

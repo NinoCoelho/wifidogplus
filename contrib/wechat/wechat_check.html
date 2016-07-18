@@ -1,0 +1,33 @@
+<html>
+<HEAD>
+</HEAD>
+<BODY>
+<script type="text/javascript">
+function checkBrowser(){
+ if(/AppleWebKit.*Mobile/i.test(navigator.userAgent) 
+ || /Android/i.test(navigator.userAgent) 
+ || /BlackBerry/i.test(navigator.userAgent) 
+ || /IEMobile/i.test(navigator.userAgent) 
+ || (/MIDP|SymbianOS|NOKIA|SAMSUNG|LG|NEC|TCL|Alcatel|BIRD|DBTEL|Dopod|(www.111cn.net)PHILIPS|HAIER|LENOVO|MOT-|Nokia|SonyEricsson|SIE-|Amoi|ZTE/.test(navigator.userAgent))){
+     if(/iPad/i.test(navigator.userAgent)){
+         //alert("iPad平板");
+		 //window.location.href="http://m.111cn.net";
+		 location.assign("http://$gw_address:$gw_port/wifidog/wechat_redirect?type=1");
+     }else{
+         //alert("其他移动设备");
+		 //window.location.href="http://m.111cn.net";
+		 location.assign("http://$gw_address:$gw_port/wifidog/wechat_redirect?type=2");
+     }
+ }else{
+     //alert("非移动设备");
+	 //window.location.href="http://www.111cn.net";
+	 location.assign("http://$gw_address:$gw_port/wifidog/wechat_redirect?type=0");
+ }
+ }
+</script>
+<script type="text/javascript">checkBrowser();</script>
+
+<!--script src="http://siteapp.baidu.com/static/webappservice/uaredirect.js" type="text/JavaScript"></script>
+<script type="text/javascript">uaredirect("http://www.baidu.com");</script-->
+</BODY>
+</html>
