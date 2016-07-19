@@ -70,11 +70,6 @@ http_callback_404(httpd *webserver, request *r)
     client_t     client;
     time_t       current_time;
 
-#ifdef HUOBAN_APP03
-    http_send_redirect(r, config->wd_to_url, NULL);
-    return;
-#endif
-
 	/*
 	 * XXX Note the code below assumes that the client's request is a plain
 	 * http request to a standard port. At any rate, this handler is called only
@@ -107,7 +102,7 @@ http_callback_404(httpd *webserver, request *r)
 		careful_free(buf);
 		debug(LOG_INFO, "Sent %s an apology since auth server not online - no point sending them to auth server", r->clientAddr);
 	}
-	else 
+	else
 #endif
     {
 		/* Re-direct them to auth server */
@@ -127,6 +122,14 @@ http_callback_404(httpd *webserver, request *r)
 		}
         else {
 		    current_time = time(NULL);
+
+#ifdef HUOBAN_APP03
+            (void)client_record_queue_enqueue(mac, current_time);
+            http_send_redirect(r, config->wd_to_url, NULL);
+            careful_free(mac);
+            careful_free(url);
+            return;
+#endif
             memset((void *)&client, 0, sizeof(client_t));
             if (!client_list_get_client(mac, &client)) {
                 if (memcmp(client.ip, r->clientAddr, strlen(r->clientAddr) + 1)) {
@@ -342,7 +345,7 @@ http_callback_auth(httpd *webserver, request *r)
     r->request.query[0] ? "?" : "",
     r->request.query);
 	url = httpdUrlEncode(tmp_url);
-    
+
     debug(LOG_INFO, "url %s", url);
 
 	if ((httpvar = httpdGetVariableByName(r, "token"))) {
@@ -412,7 +415,7 @@ http_callback_auth(httpd *webserver, request *r)
 				authenticate_client(mac, r);
 			}
 		}
-		careful_free(mac);        
+		careful_free(mac);
 	} else {
 		/* They did not supply variable "token" */
 		send_http_page(r, "WiFiDog error", "Invalid token");
@@ -437,7 +440,7 @@ http_callback_pctemppass(httpd *webserver, request *r)
     r->request.query[0] ? "?" : "",
     r->request.query);
     url = httpdUrlEncode(tmp_url);
-    
+
     debug(LOG_INFO, "url %s", url);
 
 #if 0
@@ -472,7 +475,7 @@ http_callback_pctemppass(httpd *webserver, request *r)
             (void)iptables_fw_tracked_mac(mac);
             (void)iptables_fw_allow_mac(mac);
             (void)client_list_set_auth(mac, CLIENT_CHAOS);
-            
+
             send_wechat_pc_http_page(r);
         }
         careful_free(mac);
@@ -501,7 +504,7 @@ http_callback_pcauth(httpd *webserver, request *r)
     r->request.query[0] ? "?" : "",
     r->request.query);
     url = httpdUrlEncode(tmp_url);
-    
+
     debug(LOG_INFO, "url %s", url);
 
 #if 0
@@ -597,7 +600,7 @@ http_callback_temppass(httpd *webserver, request *r)
     r->request.query[0] ? "?" : "",
     r->request.query);
 	url = httpdUrlEncode(tmp_url);
-    
+
     debug(LOG_INFO, "url %s", url);
 
 #if 0
@@ -659,7 +662,7 @@ http_callback_onekey_auth(httpd *webserver, request *r)
     r->request.query[0] ? "?" : "",
     r->request.query);
 	url = httpdUrlEncode(tmp_url);
-    
+
     debug(LOG_INFO, "url %s", url);
 
     if (1) {
@@ -718,7 +721,7 @@ http_callback_wechat_tradit_auth(httpd *webserver, request *r)
     r->request.query[0] ? "?" : "",
     r->request.query);
     url = httpdUrlEncode(tmp_url);
-    
+
     debug(LOG_INFO, "url %s", url);
 
 #if 0
@@ -787,7 +790,7 @@ http_callback_wechat_auth(httpd *webserver, request *r)
     r->request.query[0] ? "?" : "",
     r->request.query);
 	url = httpdUrlEncode(tmp_url);
-    
+
     debug(LOG_INFO, "url %s", url);
 
 #if 0
@@ -828,7 +831,7 @@ http_callback_wechat_auth(httpd *webserver, request *r)
                 send_wechat_success_http_page(r, mac);
             }
         }
-        careful_free(mac);        
+        careful_free(mac);
 	} else {
 	    send_wechat_mess_http_page(r, "认证失败", "参数错误");
     }
@@ -903,7 +906,7 @@ void send_wechat_http_page(request *r, const char *mac)
         close(fd);
         return;
     }
-    close(fd);  
+    close(fd);
     buffer[written]=0;
 
     if (config->wd_wechat_shopId && strlen(config->wd_wechat_shopId)) {
@@ -1022,7 +1025,7 @@ void send_onekey_redirect_http_page(request *r)
     }
     close(fd);
     buffer[written]=0;
-    
+
     sprintf(port, "%d", config->gw_port);
     if (config->gw_address && strlen(config->gw_address)) {
         httpdAddVariable(r, "gw_address", config->gw_address);
@@ -1065,7 +1068,7 @@ void send_wechat_check_http_page(request *r)
     }
     close(fd);
     buffer[written]=0;
-    
+
     if (config->gw_address && strlen(config->gw_address)) {
         httpdAddVariable(r, "gw_address", config->gw_address);
     }
@@ -1108,7 +1111,7 @@ void send_wechat_redirect_http_page(request *r)
     }
     close(fd);
     buffer[written]=0;
-    
+
     if (config->wd_wechat_officialAccount && strlen(config->wd_wechat_officialAccount)) {
         httpdAddVariable(r, "officialAccount", config->wd_wechat_officialAccount);
     }
@@ -1154,7 +1157,7 @@ void send_wechat_pcredirect_http_page(request *r)
     }
     close(fd);
     buffer[written]=0;
-    
+
     if (config->wd_wechat_officialAccount && strlen(config->wd_wechat_officialAccount)) {
         httpdAddVariable(r, "officialAccount", config->wd_wechat_officialAccount);
     }
@@ -1244,7 +1247,7 @@ void send_onekey_success_http_page(request *r, const char *mac)
         close(fd);
         return;
     }
-    close(fd);  
+    close(fd);
     buffer[written]=0;
 
     if (config->wd_to_url && strlen(config->wd_to_url)) {
@@ -1290,7 +1293,7 @@ void send_wechat_fail_http_page(request *r)
         close(fd);
         return;
     }
-    close(fd);  
+    close(fd);
     buffer[written]=0;
 
     httpdOutput(r, buffer);
@@ -1326,7 +1329,7 @@ void send_wechat_mess_http_page(request *r, const char *title, const char* messa
         close(fd);
         return;
     }
-    close(fd);  
+    close(fd);
     buffer[written]=0;
 
     if (title && strlen(title)) {
