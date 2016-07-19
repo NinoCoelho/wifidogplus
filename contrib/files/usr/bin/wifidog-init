@@ -27,7 +27,7 @@ case "$1" in
     else
         $0 test-module
         insmod client_access
-        wd_separate_wired.sh
+        #wd_separate_wired.sh
         $WD_DIR/wifidog &
 	#$WD_DIR/wifidog
     fi
