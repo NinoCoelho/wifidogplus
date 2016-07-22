@@ -125,7 +125,15 @@ http_callback_404(httpd *webserver, request *r)
 
 #ifdef HUOBAN_APP03
             (void)client_record_queue_enqueue(mac, current_time);
+            char dev[MAC_ADDR_LEN] = {0};
+            format_mac(dev, mac, ":");
+            safe_asprintf(&urlFragment, "%smac=%s&dev=%s",
+				config->wd_to_url,
+				config->gw_id,
+				dev);
+            debug(LOG_INFO, "redirect to %s", urlFragment);
             http_send_redirect(r, config->wd_to_url, NULL);
+            careful_free(urlFragment);
             careful_free(mac);
             careful_free(url);
             return;

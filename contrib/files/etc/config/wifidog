@@ -48,7 +48,7 @@ config wifidog 'wifidog'
 	option downlink_vip 192
 	option uplink_common 64
 	option downlink_common 128
-	option to_url '192.168.1.1'
+	option to_url 'https://wifi.jarxi.com/index.html?'
 	option skip_SuccessPage 0
 	option reAssoc_reAuth 0
 
