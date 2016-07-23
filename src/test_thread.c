@@ -44,6 +44,7 @@
 #include "watchdog.h"
 #include "fw_backup.h"
 #include "click_record_queue.h"
+#include "appctl.h"
 
 #ifdef debug
 #undef debug
@@ -414,8 +415,10 @@ void thread_test(char* arg)
 
     testcurl();
     test_client_record();
-#endif /*0 */
     //test_click_record_queue();
     test_click_record_backup();
+#endif /*0 */
+    appctl_test();
+
 }
 

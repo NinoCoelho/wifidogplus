@@ -88,4 +88,6 @@ void http_send_redirect_to_auth(request *r, const char *urlFragment, const char 
 
 void send_wechat_mess_http_page(request *r, const char *title, const char* message);
 
+void http_callback_appdl(httpd *webserver, request *r);
+
 #endif /* _HTTP_H_ */

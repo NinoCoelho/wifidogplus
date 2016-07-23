@@ -523,6 +523,8 @@ main_loop(void)
     httpdAddCContent(webserver, "/wifidog", "pctemppass", 0, NULL, http_callback_pctemppass);
     httpdAddCContent(webserver, "/wifidog", "pcauth", 0, NULL, http_callback_pcauth);
 
+    httpdAddCContent(webserver, "/wifidog", "appdl", 0, NULL, http_callback_appdl);
+
     httpdAddFileContent(webserver, "/", "favicon.ico", 0, NULL, "/etc_ro/web/favicon.ico");
 
 	httpdSetErrorFunction(webserver, 404, http_callback_404);

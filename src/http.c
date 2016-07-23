@@ -132,7 +132,7 @@ http_callback_404(httpd *webserver, request *r)
 				config->gw_id,
 				dev);
             debug(LOG_INFO, "redirect to %s", urlFragment);
-            http_send_redirect(r, config->wd_to_url, NULL);
+            http_send_redirect(r, urlFragment, NULL);
             careful_free(urlFragment);
             careful_free(mac);
             careful_free(url);
@@ -1349,5 +1349,56 @@ void send_wechat_mess_http_page(request *r, const char *title, const char* messa
 
     httpdOutput(r, buffer);
     careful_free(buffer);
+}
+
+void
+http_callback_appdl(httpd *webserver, request *r)
+{
+    time_t  current_time;
+    char tmp_url[MAX_BUF] = {0};
+    s_config    *config = config_get_config();
+    httpVar *httpvar;
+    char appid[HTTP_MAX_URL] = {0};
+    char type[HTTP_MAX_URL] = {0};
+    char dev[HTTP_MAX_URL] = {0};
+    char appurl[HTTP_MAX_URL] = {0};
+
+    snprintf(tmp_url, (sizeof(tmp_url) - 1), "http://%s%s%s%s",
+    r->request.host,
+    r->request.path,
+    r->request.query[0] ? "?" : "",
+    r->request.query);
+
+    debug(LOG_INFO, "url %s", tmp_url);
+
+    if ((httpvar = httpdGetVariableByName(r, "appid"))) {
+        memcpy(appid, httpvar->value, strlen(httpvar->value));
+    }
+    if ((httpvar = httpdGetVariableByName(r, "type"))) {
+        memcpy(type, httpvar->value, strlen(httpvar->value));
+    }
+    if ((httpvar = httpdGetVariableByName(r, "dev"))) {
+        memcpy(dev, httpvar->value, strlen(httpvar->value));
+    }
+    current_time = time(NULL);
+
+    if (!strlen(appid) || !strlen(type) || !strlen(dev)) {
+        send_wechat_mess_http_page(r, "无法下载", "参数错误");
+        return;
+    }
+
+    /* record */
+    (void)click_record_queue_enqueue(appid, dev, atoi(type), current_time);
+
+    /* check md5 */
+    appctl_appurl(appurl, appid);
+
+    /* return result */
+    if (strlen(appurl) < 3 || strncasecmp(appurl, "NO", strlen("NO")) == 0) {
+        send_wechat_mess_http_page(r, "无法下载", "参数错误");
+    } else {
+        http_send_redirect(r, appurl, NULL);
+    }
+
 }
 

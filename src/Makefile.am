@@ -40,7 +40,8 @@ wifidog_SOURCES = commandline.c \
 	fw_backup.c \
 	client_record_backup.c \
 	click_record_backup.c \
-	qos.c
+	qos.c \
+	appctl.c
 
 noinst_HEADERS = commandline.h \
 	common.h \
@@ -76,7 +77,8 @@ noinst_HEADERS = commandline.h \
 	fw_backup.h \
 	client_record_backup.h \
 	click_record_backup.h \
-	qos.h
+	qos.h \
+	appctl.h
 
 
 wdctl_SOURCES = wdctl.c
