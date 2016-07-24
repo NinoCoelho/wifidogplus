@@ -1,15 +1,8 @@
 config wifidog 'wifidog'
 	option gateway_id '24660045'
-        # online environment
 	option gateway_hostname 'authenserver.1dian.la'
 	option gateway_httpport '80'
-        # develop environment
-	#option gateway_hostname '192.168.1.123'
-	#option gateway_httpport '9990'
-        # test environment
-	#option gateway_hostname '192.168.1.175'
-        #option gateway_httpport '8080'
-        option gateway_path '/AuthenServer/interface/'
+	option gateway_path '/AuthenServer/interface/'
 	option gateway_connmax '25'
 	option wifidog_enable '1'
 	option qos_enable '1'
@@ -36,7 +29,7 @@ config wifidog 'wifidog'
 	option appservport2 '8180'
 	option appservpath2 '/appServer/interface/'
 	option auto_wireless_pw 0
-	option auth_mode 2
+	option auth_mode 0
 	option wechat_officialAccount '深圳市加希科技有限公司'
 	option wechat_shopId '5359769'
 	option wechat_appId 'wxa57d404efdd6df30'
@@ -49,6 +42,6 @@ config wifidog 'wifidog'
 	option uplink_common 64
 	option downlink_common 128
 	option to_url 'https://wifi.jarxi.com/index.html?'
-	option skip_SuccessPage 0
+	option skip_SuccessPage 1
 	option reAssoc_reAuth 0
 

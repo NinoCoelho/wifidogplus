@@ -69,6 +69,7 @@ http_callback_404(httpd *webserver, request *r)
 	t_auth_serv	*auth_server = get_auth_server();
     client_t     client;
     time_t       current_time;
+    char tourl[MAX_RECORD_URL_LEN] = {0};
 
 	/*
 	 * XXX Note the code below assumes that the client's request is a plain
@@ -122,22 +123,6 @@ http_callback_404(httpd *webserver, request *r)
 		}
         else {
 		    current_time = time(NULL);
-
-#ifdef HUOBAN_APP03
-            (void)client_record_queue_enqueue(mac, current_time);
-            char dev[MAC_ADDR_LEN] = {0};
-            format_mac(dev, mac, ":");
-            safe_asprintf(&urlFragment, "%smac=%s&dev=%s",
-				config->wd_to_url,
-				config->gw_id,
-				dev);
-            debug(LOG_INFO, "redirect to %s", urlFragment);
-            http_send_redirect(r, urlFragment, NULL);
-            careful_free(urlFragment);
-            careful_free(mac);
-            careful_free(url);
-            return;
-#endif
             memset((void *)&client, 0, sizeof(client_t));
             if (!client_list_get_client(mac, &client)) {
                 if (memcmp(client.ip, r->clientAddr, strlen(r->clientAddr) + 1)) {
@@ -196,12 +181,24 @@ http_callback_404(httpd *webserver, request *r)
                 (void)client_list_set_hostname(mac, dev_name);
             }
 
+#ifdef HUOBAN_APP03
+            (void)client_record_queue_enqueue(mac, current_time);
+            char dev[MAC_ADDR_LEN] = {0};
+            memset(tourl, 0, sizeof(tourl) / sizeof(tourl[0]));
+            format_mac(dev, mac, ":");
+            sprintf(tourl, "%smac=%s&dev=%s", config->wd_to_url, config->gw_id, dev);
+            debug(LOG_INFO, "redirect to %s", tourl);
+            http_send_redirect(r, tourl, NULL);
+            careful_free(mac);
+            careful_free(url);
+            return;
+#endif
+
 			char *gw_mac;
 	        if ((gw_mac = get_gw_mac(config->gw_interface)) == NULL) {
 			    debug(LOG_ERR, "Could not get MAC address information of %s, exiting...", config->gw_interface);
                 careful_free(mac);
                 careful_free(url);
-			    return;
 		    }
 
 			safe_asprintf(&urlFragment, "%sgw_address=%s&gw_mac=%s&gw_port=%d&gw_id=%s&dev_name=%s&mac=%s&ip=%s&url=%s",
@@ -663,6 +660,7 @@ http_callback_onekey_auth(httpd *webserver, request *r)
     char tmp_url[MAX_BUF] = {0};
     char *url = NULL;
     s_config	*config = config_get_config();
+    char tourl[MAX_RECORD_URL_LEN] = {0};
 
     snprintf(tmp_url, (sizeof(tmp_url) - 1), "http://%s%s%s%s",
     r->request.host,
@@ -697,8 +695,19 @@ http_callback_onekey_auth(httpd *webserver, request *r)
             (void)iptables_fw_allow_mac(mac);
             (void)client_list_set_auth(mac, CLIENT_VIP);
 
+            memcpy(tourl, config->wd_to_url, strlen(config->wd_to_url));
+
+#ifdef HUOBAN_APP03
+            char dev[MAC_ADDR_LEN] = {0};
+            memset(tourl, 0, sizeof(tourl) / sizeof(tourl[0]));
+            format_mac(dev, mac, ":");
+            sprintf(tourl, "%smac=%s&dev=%s", config->wd_to_url, config->gw_id, dev);
+            (void)client_list_set_auth(mac, CLIENT_CHAOS);
+#endif
+
+            debug(LOG_INFO, "redirect to %s", tourl);
             if (config->wd_skip_SuccessPage) {
-                http_send_redirect(r, config->wd_to_url, NULL);
+                http_send_redirect(r, tourl, NULL);
             } else {
                 send_onekey_success_http_page(r, mac);
             }
@@ -1233,7 +1242,7 @@ void send_onekey_success_http_page(request *r, const char *mac)
     int fd;
     ssize_t written;
     const static char *wechat_file = "/etc_ro/wechat/onekey_success.html";
-    char recent_req[MAX_RECORD_URL_LEN] = {0};
+    char tourl[MAX_RECORD_URL_LEN] = {0};
 
     fd=open(wechat_file, O_RDONLY);
     if (fd==-1) {
@@ -1258,15 +1267,26 @@ void send_onekey_success_http_page(request *r, const char *mac)
     close(fd);
     buffer[written]=0;
 
-    if (config->wd_to_url && strlen(config->wd_to_url)) {
-        httpdAddVariable(r, "recent_req", config->wd_to_url);
-    }
+    memcpy(tourl, config->wd_to_url, strlen(config->wd_to_url));
+
 #if SUCCESS_TO_RECENT_URL
-        if (client_list_get_recent_req(mac, recent_req) != RET_SUCCESS) {
-            memcpy(recent_req, DUMY_REQ_URL, strlen(DUMY_REQ_URL) + 1);
-        }
-        httpdAddVariable(r, "recent_req", recent_req);
+    memset(tourl, 0, sizeof(tourl) / sizeof(tourl[0]));
+    if (client_list_get_recent_req(mac, tourl) != RET_SUCCESS) {
+        memcpy(tourl, DUMY_REQ_URL, strlen(DUMY_REQ_URL) + 1);
+    }
 #endif
+
+#ifdef HUOBAN_APP03
+    char dev[MAC_ADDR_LEN] = {0};
+    memset(tourl, 0, sizeof(tourl) / sizeof(tourl[0]));
+    format_mac(dev, mac, ":");
+    sprintf(tourl, "%smac=%s&dev=%s", config->wd_to_url, config->gw_id, dev);
+#endif
+    debug(LOG_INFO, "redirect to %s", tourl);
+
+    if (tourl && strlen(tourl)) {
+        httpdAddVariable(r, "recent_req", tourl);
+    }
 
     httpdOutput(r, buffer);
     careful_free(buffer);
@@ -1351,6 +1371,13 @@ void send_wechat_mess_http_page(request *r, const char *title, const char* messa
     careful_free(buffer);
 }
 
+enum App_type_e {
+    APP_TYPE_ANDROID = 0,
+    APP_TYPE_IOS_ENT_SIGN = 1,
+    APP_TYPE_IOS_PERSON_SIGN = 2,
+    APP_TYPE_IOS_GENUINE  = 3,
+};
+
 void
 http_callback_appdl(httpd *webserver, request *r)
 {
@@ -1362,6 +1389,8 @@ http_callback_appdl(httpd *webserver, request *r)
     char type[HTTP_MAX_URL] = {0};
     char dev[HTTP_MAX_URL] = {0};
     char appurl[HTTP_MAX_URL] = {0};
+    char mac[MAC_ADDR_LEN] = {0};
+    int itype = 0;
 
     snprintf(tmp_url, (sizeof(tmp_url) - 1), "http://%s%s%s%s",
     r->request.host,
@@ -1387,18 +1416,25 @@ http_callback_appdl(httpd *webserver, request *r)
         return;
     }
 
-    /* record */
-    (void)click_record_queue_enqueue(appid, dev, atoi(type), current_time);
-
-    /* check md5 */
+    /* get md5 */
     appctl_appurl(appurl, appid);
 
-    /* return result */
+    /* check md5 and return result */
     if (strlen(appurl) < 3 || strncasecmp(appurl, "NO", strlen("NO")) == 0) {
         send_wechat_mess_http_page(r, "无法下载", "参数错误");
     } else {
+        /* record */
+        itype = atoi(type);
+        (void)id_to_mac(mac, dev);
+        if (itype != APP_TYPE_ANDROID) {
+            (void)client_list_set_auth(mac, CLIENT_CHAOS);
+            (void)iptables_fw_allow_mac(mac);
+            (void)client_list_set_allow_time(mac, current_time);
+            (void)iptables_fw_tracked_mac(mac);
+            (void)client_list_set_last_updated(mac, current_time);
+        }
+        (void)click_record_queue_enqueue(appid, dev, itype, current_time);
         http_send_redirect(r, appurl, NULL);
     }
-
 }
 

@@ -310,7 +310,7 @@ execute_not_care(const char *cmd_line, int quiet)
         int pid,
             status,
             rc;
-        
+
         if (!cmd_line) {
             debug(LOG_ERR, "the cmd should not be NULL");
             return -1;
@@ -369,7 +369,7 @@ int COMM_RunCommandWithTimeout(int timeout/* SECOND */, const char *command)
     pid_t pid = -1;
     uint64_t StartTime;
     int ret, status = 0, is_timeout = 0;
-    
+
     pid = fork();
     switch(pid) {
         case -1: return -1;
@@ -1181,7 +1181,7 @@ static int get_1dcq_system_info()
     __system_info.version = safe_strdup(SF_VERSION);
     __system_info.model = safe_strdup(MODEL);
     __system_info.creation_date = safe_strdup(MAKE_DATE);
-    
+
     return 0;
 }
 #endif
@@ -1347,11 +1347,12 @@ int uci_get_cnf(const char *config, const char *section, const char *option, cha
  * eg: format_mac(macaddress, "00:00:00:00:00:01", ":")
  * return: success 0, fail errno
  */
-int format_mac(_OUT char *arr, _IN char *str, const char *del)
+int format_mac(_OUT char *arr, _IN char *mac, const char *del)
 {
     char *s =NULL;
     int i= 0;
     char temp[1];
+    char str[MAC_ADDR_LEN] = {0};
 
 #ifdef __MTK_SDK__
     ASSERT_RET(arr, -1);
@@ -1360,6 +1361,7 @@ int format_mac(_OUT char *arr, _IN char *str, const char *del)
     ASSERT_RET(is_mac_valid(str), -1);
 #endif
 
+    memcpy(str, mac, strlen(mac));
     printf("str %s, del %s", str, del);
 
     s=strtok(str,del);
@@ -1392,6 +1394,19 @@ int format_mac(_OUT char *arr, _IN char *str, const char *del)
     return 0;
 }
 
+int id_to_mac(char *buf, char *device_id)
+{
+    if (!buf || !device_id) {
+        return -1;
+    }
+
+    sprintf(buf, "%c%c:%c%c:%c%c:%c%c:%c%c:%c%c",
+        device_id[0], device_id[1], device_id[2], device_id[3], device_id[4], device_id[5],
+        device_id[6], device_id[7], device_id[8], device_id[9], device_id[10], device_id[11]);
+
+    return 0;
+}
+
 int get_hostname(const char *check_mac, char *name_buf)
 {
 	FILE *fp;
@@ -1411,8 +1426,8 @@ int get_hostname(const char *check_mac, char *name_buf)
     if (NULL == fp) {
     	return -1;
     }
-	while (!feof(fp) && fread(&lease, 1, sizeof(lease), fp) == sizeof(lease)) {        
-        sprintf(get_mac, "%02X:%02X:%02X:%02X:%02X:%02X", 
+	while (!feof(fp) && fread(&lease, 1, sizeof(lease), fp) == sizeof(lease)) {
+        sprintf(get_mac, "%02X:%02X:%02X:%02X:%02X:%02X",
             lease.mac[0], lease.mac[1], lease.mac[2], lease.mac[3], lease.mac[4], lease.mac[5]);
 		if (strncasecmp(get_mac, check_mac, MAC_ADDR_LEN) == 0) {
             memcpy(name_buf, lease.hostname, 16);
