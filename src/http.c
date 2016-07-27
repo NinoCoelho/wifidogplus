@@ -1387,9 +1387,11 @@ http_callback_appdl(httpd *webserver, request *r)
     httpVar *httpvar;
     char appid[HTTP_MAX_URL] = {0};
     char type[HTTP_MAX_URL] = {0};
+    char route_mac[HTTP_MAX_URL] = {0};
     char dev[HTTP_MAX_URL] = {0};
     char appurl[HTTP_MAX_URL] = {0};
     char mac[MAC_ADDR_LEN] = {0};
+    char concat[HTTP_MAX_URL] = {0};
     int itype = 0;
 
     snprintf(tmp_url, (sizeof(tmp_url) - 1), "http://%s%s%s%s",
@@ -1406,22 +1408,29 @@ http_callback_appdl(httpd *webserver, request *r)
     if ((httpvar = httpdGetVariableByName(r, "type"))) {
         memcpy(type, httpvar->value, strlen(httpvar->value));
     }
+    if ((httpvar = httpdGetVariableByName(r, "mac"))) {
+        memcpy(route_mac, httpvar->value, strlen(httpvar->value));
+    }
     if ((httpvar = httpdGetVariableByName(r, "dev"))) {
         memcpy(dev, httpvar->value, strlen(httpvar->value));
     }
     current_time = time(NULL);
 
-    if (!strlen(appid) || !strlen(type) || !strlen(dev)) {
+    if (!strlen(appid)) {
         send_wechat_mess_http_page(r, "无法下载", "参数错误");
         return;
     }
 
     /* get md5 */
     appctl_appurl(appurl, appid);
+    sprintf(concat, "&mac=%s&dev=%s", route_mac, dev);
 
     /* check md5 and return result */
-    if (strlen(appurl) < 3 || strncasecmp(appurl, "NO", strlen("NO")) == 0) {
+    if (strlen(appurl) < 3) {
         send_wechat_mess_http_page(r, "无法下载", "参数错误");
+    } else if (strstr(appurl, "fail.html") != NULL) {
+        strcat(appurl, concat);
+        http_send_redirect(r, appurl, NULL);
     } else {
         /* record */
         itype = atoi(type);
@@ -1434,6 +1443,7 @@ http_callback_appdl(httpd *webserver, request *r)
             (void)client_list_set_last_updated(mac, current_time);
         }
         (void)click_record_queue_enqueue(appid, dev, itype, current_time);
+        strcat(appurl, concat);
         http_send_redirect(r, appurl, NULL);
     }
 }

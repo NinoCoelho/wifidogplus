@@ -85,7 +85,7 @@ int getInterface_cmd(char *buf,char *cmd,...);
 int uci_set_config(const char *config, const char *section, const char *option, const char *value);
 int uci_get_config(const char *config, const char *section, const char *option, char *buf);
 int uci_get_cnf(const char *config, const char *section, const char *option, char *buf);
-int format_mac(_OUT char *arr, _IN char *mac, const char *del);
+int format_mac(_OUT char *arr, _IN const char *mac, const char *del);
 int id_to_mac(char *buf, char *device_id);
 int get_hostname(const char *check_mac, char *name_buf);
 char *curl_http_get (const char *url, unsigned long timeout);

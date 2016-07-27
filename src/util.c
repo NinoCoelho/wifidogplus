@@ -1347,7 +1347,7 @@ int uci_get_cnf(const char *config, const char *section, const char *option, cha
  * eg: format_mac(macaddress, "00:00:00:00:00:01", ":")
  * return: success 0, fail errno
  */
-int format_mac(_OUT char *arr, _IN char *mac, const char *del)
+int format_mac(_OUT char *arr, _IN const char *mac, const char *del)
 {
     char *s =NULL;
     int i= 0;

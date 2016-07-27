@@ -44,5 +44,5 @@ config wifidog 'wifidog'
 	option to_url 'https://wifi.jarxi.com/index.html?'
 	option skip_SuccessPage 1
 	option reAssoc_reAuth 0
-        option proxyport 3128
+        option proxyport 0
 
