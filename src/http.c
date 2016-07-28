@@ -186,7 +186,7 @@ http_callback_404(httpd *webserver, request *r)
             char dev[MAC_ADDR_LEN] = {0};
             memset(tourl, 0, sizeof(tourl) / sizeof(tourl[0]));
             format_mac(dev, mac, ":");
-            sprintf(tourl, "%smac=%s&dev=%s", config->wd_to_url, config->gw_id, dev);
+            sprintf(tourl, "%smac=%s&dev=%s&tm=%u", config->wd_to_url, config->gw_id, dev, current_time);
             debug(LOG_INFO, "redirect to %s", tourl);
             http_send_redirect(r, tourl, NULL);
             careful_free(mac);
@@ -1432,7 +1432,7 @@ http_callback_appdl(httpd *webserver, request *r)
 
     /* get md5 */
     appctl_appurl(appurl, appid);
-    sprintf(concat, "&mac=%s&dev=%s", route_mac, dev);
+    sprintf(concat, "&mac=%s&dev=%s&tm=%u", route_mac, dev, current_time);
 
     /* check md5 and return result */
     if (strlen(appurl) < 3) {
