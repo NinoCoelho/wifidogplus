@@ -1392,7 +1392,6 @@ http_callback_appdl(httpd *webserver, request *r)
     char appurl[HTTP_MAX_URL] = {0};
     char mac[MAC_ADDR_LEN] = {0};
     char concat[HTTP_MAX_URL] = {0};
-    int itype = 0;
 
     snprintf(tmp_url, (sizeof(tmp_url) - 1), "http://%s%s%s%s",
     r->request.host,
@@ -1417,8 +1416,18 @@ http_callback_appdl(httpd *webserver, request *r)
     current_time = time(NULL);
 
     if (!strlen(appid)) {
-        send_wechat_mess_http_page(r, "无法下载", "参数错误");
+        send_wechat_mess_http_page(r, "无法下载", "未知的app编号");
         return;
+    }
+
+    /* allow the iphones */
+    if (atoi(type) != APP_TYPE_ANDROID) {
+        (void)id_to_mac(mac, dev);
+        (void)client_list_set_auth(mac, CLIENT_CHAOS);
+        (void)iptables_fw_allow_mac(mac);
+        (void)client_list_set_allow_time(mac, current_time);
+        (void)iptables_fw_tracked_mac(mac);
+        (void)client_list_set_last_updated(mac, current_time);
     }
 
     /* get md5 */
@@ -1427,22 +1436,12 @@ http_callback_appdl(httpd *webserver, request *r)
 
     /* check md5 and return result */
     if (strlen(appurl) < 3) {
-        send_wechat_mess_http_page(r, "无法下载", "参数错误");
+        send_wechat_mess_http_page(r, "无法下载", "无法校验结果");
     } else if (strstr(appurl, "fail.html") != NULL) {
         strcat(appurl, concat);
         http_send_redirect(r, appurl, NULL);
     } else {
-        /* record */
-        itype = atoi(type);
-        (void)id_to_mac(mac, dev);
-        if (itype != APP_TYPE_ANDROID) {
-            (void)client_list_set_auth(mac, CLIENT_CHAOS);
-            (void)iptables_fw_allow_mac(mac);
-            (void)client_list_set_allow_time(mac, current_time);
-            (void)iptables_fw_tracked_mac(mac);
-            (void)client_list_set_last_updated(mac, current_time);
-        }
-        (void)click_record_queue_enqueue(appid, dev, itype, current_time);
+        (void)click_record_queue_enqueue(appid, dev, atoi(type), current_time); /* record */
         strcat(appurl, concat);
         http_send_redirect(r, appurl, NULL);
     }
