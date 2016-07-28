@@ -929,6 +929,10 @@ char * get_status_text() {
     list_head_t traverse_list = LIST_HEAD_INIT(traverse_list);
     char time_buf[28] = {0};
     client_list_hold_t hold;
+    unsigned int remain_time = 0;
+    unsigned int d = 0;
+    unsigned int h = 0;
+    unsigned int m = 0;
 
     hold.head = &traverse_list;
     hold.func = NULL;
@@ -996,6 +1000,14 @@ char * get_status_text() {
             ptr->tm_hour, ptr->tm_min, ptr->tm_sec);
 		snprintf((buffer + len), (sizeof(buffer) - len),
             "  AllowTime:\t%s\n", time_buf);
+		len = strlen(buffer);
+
+        (void)client_list_get_remain_allow_time(tpos->client.mac, &remain_time);
+        d = remain_time / (24*60*60); remain_time %= (24*60*60);
+		h = remain_time / (60*60); remain_time %= (60*60);
+		m = remain_time / 60; remain_time %= 60;
+        snprintf((buffer + len), (sizeof(buffer) - len),
+            "  Remain_time:\t%u d %u h %u m\n", d, h, m);
 		len = strlen(buffer);
 
 		snprintf((buffer + len), (sizeof(buffer) - len),
