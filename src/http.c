@@ -1371,13 +1371,6 @@ void send_wechat_mess_http_page(request *r, const char *title, const char* messa
     careful_free(buffer);
 }
 
-enum App_type_e {
-    APP_TYPE_ANDROID = 0,
-    APP_TYPE_IOS_ENT_SIGN = 1,
-    APP_TYPE_IOS_PERSON_SIGN = 2,
-    APP_TYPE_IOS_GENUINE  = 3,
-};
-
 void
 http_callback_appdl(httpd *webserver, request *r)
 {
@@ -1387,6 +1380,8 @@ http_callback_appdl(httpd *webserver, request *r)
     httpVar *httpvar;
     char appid[HTTP_MAX_URL] = {0};
     char type[HTTP_MAX_URL] = {0};
+    char allow[HTTP_MAX_URL] = {0};
+    char duration[HTTP_MAX_URL] = {0};
     char route_mac[HTTP_MAX_URL] = {0};
     char dev[HTTP_MAX_URL] = {0};
     char appurl[HTTP_MAX_URL] = {0};
@@ -1407,6 +1402,12 @@ http_callback_appdl(httpd *webserver, request *r)
     if ((httpvar = httpdGetVariableByName(r, "type"))) {
         memcpy(type, httpvar->value, strlen(httpvar->value));
     }
+    if ((httpvar = httpdGetVariableByName(r, "allow"))) {
+        memcpy(allow, httpvar->value, strlen(httpvar->value));
+    }
+    if ((httpvar = httpdGetVariableByName(r, "duration"))) {
+        memcpy(duration, httpvar->value, strlen(httpvar->value));
+    }
     if ((httpvar = httpdGetVariableByName(r, "mac"))) {
         memcpy(route_mac, httpvar->value, strlen(httpvar->value));
     }
@@ -1421,7 +1422,7 @@ http_callback_appdl(httpd *webserver, request *r)
     }
 
     /* allow the iphones */
-    if (atoi(type) != APP_TYPE_ANDROID) {
+    if (atoi(allow) == 1) {
         (void)id_to_mac(mac, dev);
         (void)client_list_set_auth(mac, CLIENT_CHAOS);
         (void)iptables_fw_allow_mac(mac);
