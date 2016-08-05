@@ -193,7 +193,7 @@ char * arp_get_interface(const char *req_mac)
     char interface[16];
     char mac[MAC_ADDR_LEN];
     char * reply = NULL;
-    
+
 #if _CHECK_CAREFUL_
     if (!is_mac_valid(req_mac)) {
         return NULL;
@@ -451,7 +451,7 @@ fw_sync_with_authserver(void)
     hold.head = &client_traverse_list;
     hold.func = fw_sync_condition;
     hold.args = NULL;
-    if (client_list_traverse((CLIENT_LIST_CONDITION_FUNC)client_list_hold, &hold)) {
+    if (client_list_traverse((CLIENT_LIST_TRAVERSE_FUNC)client_list_hold, &hold)) {
         client_list_destory_hold(&hold);
         debug(LOG_ERR, "fail to create client_traverse_list");
         return;
@@ -559,27 +559,12 @@ fw_sync_with_authserver(void)
         else { /* client_list_is_connect_really(pos->client.mac) */
 #if LOCAL_AUTH
             if (pos->client.fw_state == CLIENT_ALLOWED) {
-                if (pos->client.auth >= CLIENT_VIP) {
-                    if (current_time - pos->client.allow_time
-                        > CLIENT_TIME_LOCAL_WECHAT_VIP * config->checkinterval) {
-                        debug(LOG_INFO, "deny %s", pos->client.mac);
-                        (void)iptables_fw_deny_mac(pos->client.mac);
-                        continue;
-                    }
-                } else if (pos->client.auth >= CLIENT_COMMON) {
-                    if (current_time - pos->client.allow_time
-                        > CLIENT_TIME_LOCAL_WECHAT_COMMON * config->checkinterval) {
-                        debug(LOG_INFO, "deny %s", pos->client.mac);
-                        (void)iptables_fw_deny_mac(pos->client.mac);
-                        continue;
-                    }
-                } else {
-                    if (current_time - pos->client.allow_time
-                        > CLIENT_TIME_LOCAL_WECHAT_UNAUTH * config->checkinterval) {
-                        debug(LOG_INFO, "deny %s", pos->client.mac);
-                        (void)iptables_fw_deny_mac(pos->client.mac);
-                        continue;
-                    }
+                unsigned int remain = 0;
+                (void)client_list_get_remain_allow_time(pos->client.mac, &remain);
+                if (remain <= 0) {
+                    debug(LOG_INFO, "deny %s", pos->client.mac);
+                    (void)iptables_fw_deny_mac(pos->client.mac);
+                    continue;
                 }
             }
 #else

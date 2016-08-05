@@ -51,7 +51,7 @@ int thread_client_access_preproccess(char *arg)
     unsigned int fw_state;
     time_t current_time;
     time_t last_updated;
-    client_t client;    
+    client_t client;
 	s_config *config = config_get_config();
 
     if (client_access_queue_init()) {
@@ -131,7 +131,7 @@ int thread_client_access_preproccess(char *arg)
         } else {
             (void)client_list_add(mac);
         }
-        
+
 #if LOCAL_AUTH
         if (config->wd_reAssoc_reAuth) {
             if (client.auth < CLIENT_CONFIG) {
@@ -154,7 +154,7 @@ int thread_client_access_preproccess(char *arg)
 
         sem_post(&sem_client_access_preproccess);
         (void)client_list_set_last_updated(mac, current_time);
-#if ALLOW_FIRST_WIRELESS
+#if ALLOW_FIRST
         (void)iptables_fw_allow_mac(mac);
 #endif
     }

@@ -937,7 +937,7 @@ char * get_status_text() {
     hold.head = &traverse_list;
     hold.func = NULL;
     hold.args = NULL;
-    if (client_list_traverse((CLIENT_LIST_CONDITION_FUNC)client_list_hold, &hold)) {
+    if (client_list_traverse((CLIENT_LIST_TRAVERSE_FUNC)client_list_hold, &hold)) {
         client_list_destory_hold(&hold);
         debug(LOG_ERR, "fail to create client_traverse_list");
     }
@@ -1003,6 +1003,7 @@ char * get_status_text() {
 		len = strlen(buffer);
 
         (void)client_list_get_remain_allow_time(tpos->client.mac, &remain_time);
+        remain_time = remain_time + (config_get_config()->checkinterval / 2);
         d = remain_time / (24*60*60); remain_time %= (24*60*60);
 		h = remain_time / (60*60); remain_time %= (60*60);
 		m = remain_time / 60; remain_time %= 60;
@@ -1102,7 +1103,7 @@ char * get_status_text_goahead() {
     hold.head = &traverse_list;
     hold.func = goahead_list_condition;
     hold.args = NULL;
-    if (client_list_traverse((CLIENT_LIST_CONDITION_FUNC)client_list_hold, &hold)) {
+    if (client_list_traverse((CLIENT_LIST_TRAVERSE_FUNC)client_list_hold, &hold)) {
         client_list_destory_hold(&hold);
         debug(LOG_ERR, "fail to create client_traverse_list");
     }

@@ -71,13 +71,11 @@
 
 #define QOS_ENABLE                          0
 
-#define SUPPORT_APPEND_PC_NUM               (1UL)
-
 #define LOCAL_AUTH                          1
 #define SUCCESS_TO_RECENT_URL               0
 
 /* allow first, have a better experience; deny first, save more traffic */
-#define ALLOW_FIRST_WIRELESS        1
+#define ALLOW_FIRST                         0
 
 //define OFFLINE_CLEAR_FW
 

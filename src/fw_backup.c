@@ -68,7 +68,12 @@ static int fw_backup_restore_mac(char *mac, char *ip, int auth, unsigned int fw_
         (void)iptables_fw_untracked_mac(mac);   /* cannot do it first. untracked first, because can not confirm that whether the ip in iptables or not now */
         (void)iptables_fw_tracked_mac(mac);
     }
-    if (auth >= CLIENT_CHAOS || CLIENT_ALLOWED == fw_state) {
+#if ALLOW_FIRST
+    if (auth >= CLIENT_CHAOS || CLIENT_ALLOWED == fw_state)
+#else
+    if (auth > CLIENT_CHAOS || CLIENT_ALLOWED == fw_state)
+#endif
+    {
         (void)iptables_fw_deny_mac(mac);        /* deny first, because can not confirm that whether the mac in iptables or not now */
         (void)iptables_fw_allow_mac(mac);
         if (auth < CLIENT_CONFIG) {
@@ -88,7 +93,7 @@ int fw_backup_from_client_list()
     hold.head = &restore_list;
     hold.func = NULL;
     hold.args = NULL;
-    if (client_list_traverse((CLIENT_LIST_CONDITION_FUNC)client_list_hold, &hold)) {
+    if (client_list_traverse((CLIENT_LIST_TRAVERSE_FUNC)client_list_hold, &hold)) {
         client_list_destory_hold(&hold);
         debug(LOG_ERR, "fail to hold fillwall");
         return -1;
@@ -167,7 +172,7 @@ int fw_backup_refresh()
     hold.head = &refresh_list;
     hold.func = NULL;
     hold.args = NULL;
-    if (client_list_traverse((CLIENT_LIST_CONDITION_FUNC)client_list_hold, &hold)) {
+    if (client_list_traverse((CLIENT_LIST_TRAVERSE_FUNC)client_list_hold, &hold)) {
         fclose(file);
         client_list_destory_hold(&hold);
         debug(LOG_ERR, "fail to hold fillwall");
