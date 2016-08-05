@@ -514,9 +514,11 @@ iptables_fw_init(void)
 	iptables_do_command("-t filter -A " TABLE_WIFIDOG_WIFI_TO_INTERNET " -o %s -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu", ext_interface);
 
 	iptables_do_command("-t filter -A " TABLE_WIFIDOG_WIFI_TO_INTERNET " -j " TABLE_WIFIDOG_AUTHSERVERS);
+	iptables_fw_set_authservers();
 	//iptables_do_command("-t filter -A " TABLE_WIFIDOG_WIFI_TO_INTERNET " -j " TABLE_WIFIDOG_APPSERVERS);
 	iptables_do_command("-t filter -A " TABLE_WIFIDOG_WIFI_TO_INTERNET " -j " TABLE_WIFIDOG_WHITE_URL);
-	iptables_fw_set_authservers();
+    iptables_load_ruleset("filter", "whiteurl", TABLE_WIFIDOG_WHITE_URL);
+    iptables_load_ruleset("nat", "whiteurl", TABLE_WIFIDOG_WHITE_URL);
 
 	iptables_do_command("-t filter -A " TABLE_WIFIDOG_WIFI_TO_INTERNET " -m mark --mark 0x%u -j " TABLE_WIFIDOG_LOCKED, FW_MARK_LOCKED);
 	iptables_load_ruleset("filter", "locked-users", TABLE_WIFIDOG_LOCKED);

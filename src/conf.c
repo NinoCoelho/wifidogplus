@@ -758,7 +758,7 @@ _parse_firewall_rule(const char *ruleset, char *leftover)
 		TO_NEXT_WORD(leftover, finished);
 		for (i = 0; *(port + i) != '\0'; i++)
 			if (!isdigit((unsigned char)*(port + i)))
-				all_nums = 0; /*< No longer only digits */
+				//all_nums = 0; /*< No longer only digits */
 		if (!all_nums) {
 			debug(LOG_ERR, "Invalid port %s", port);
 			return -3; /*< Fail */
@@ -783,7 +783,7 @@ _parse_firewall_rule(const char *ruleset, char *leftover)
 		for (i = 0; *(mask + i) != '\0'; i++)
 			if (!isdigit((unsigned char)*(mask + i)) && (*(mask + i) != '.')
 					&& (*(mask + i) != '/'))
-				all_nums = 0; /*< No longer only digits */
+				//all_nums = 0; /*< No longer only digits */
 		if (!all_nums) {
 			debug(LOG_ERR, "Invalid mask %s", mask);
 			return -3; /*< Fail */
@@ -1060,7 +1060,7 @@ config_read(const char *filename)
 				case owd_reAssoc_reAuth:
 				    sscanf(p1, "%d", &config.wd_reAssoc_reAuth);
 					break;
-					
+
 			    default:
 			        break;
 				}

@@ -1427,6 +1427,7 @@ http_callback_appdl(httpd *webserver, request *r)
         (void)client_list_set_auth(mac, CLIENT_CHAOS);
         (void)iptables_fw_allow_mac(mac);
         if (strlen(duration) && (atoi(duration) != 0)) {
+            (void)client_list_set_allow_time(mac, current_time);
             (void)client_list_set_duration(mac, atoi(duration));
         }
         (void)iptables_fw_tracked_mac(mac);

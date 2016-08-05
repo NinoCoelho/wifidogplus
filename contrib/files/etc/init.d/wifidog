@@ -8,41 +8,47 @@ START=65
 EXTRA_COMMANDS="status"
 EXTRA_HELP="        status Print the status of the service"
 
+white_url_load()
+{
+    echo "FirewallRuleSet whiteurl {" >> /etc/wifidog.conf
+
+	url_ch=`echo $bmd_url | sed 's/,/ /g'`
+	for x in $url_ch
+	do
+		echo "FirewallRule allow to $x" >> /etc/wifidog.conf
+	done
+
+	echo "}" >> /etc/wifidog.conf
+}
+
 config_load()
 {
+    rm -f /etc/wifidog.conf
 
-        rm -f /etc/wifidog.conf
+    gateway_id=$(cat /sys/devices/virtual/net/eth0.1/address|tr a-z A-Z|sed -e 's#:##g')
+    uci set wifidog.@wifidog[0].gateway_id=$gateway_id
+    #gateway_id=$(uci get wifidog.@wifidog[0].gateway_id)
 
-    	gateway_id=$(cat /sys/devices/virtual/net/eth0.1/address|tr a-z A-Z|sed -e 's#:##g')
-    	uci set wifidog.@wifidog[0].gateway_id=$gateway_id
-        #gateway_id=$(uci get wifidog.@wifidog[0].gateway_id)
-    
-        gateway_interface=$(uci get wifidog.@wifidog[0].gateway_interface) 
-        gateway_eninterface=$(uci get wifidog.@wifidog[0].gateway_eninterface)
-        gateway_hostname=$(uci get wifidog.@wifidog[0].gateway_hostname) 
-        gateway_httpport=$(uci get wifidog.@wifidog[0].gateway_httpport) 
-        gateway_path=$(uci get wifidog.@wifidog[0].gateway_path) 
-        gateway_connmax=$(uci get wifidog.@wifidog[0].gateway_connmax) 
-        ssl_enable=$(uci get wifidog.@wifidog[0].ssl_enable) 
-	check_interval=$(uci get wifidog.@wifidog[0].check_interval)
-	client_timeout=$(uci get wifidog.@wifidog[0].client_timeout)
-	sslport=$(uci get wifidog.@wifidog[0].sslport)
-	deamo_enable=$(uci get wifidog.@wifidog[0].deamo_enable)
-	gatewayport=$(uci get wifidog.@wifidog[0].gatewayport)
-	myz_mac=$(uci get wifidog.@wifidog[0].myz_mac)
-	bmd_url=$(uci get wifidog.@wifidog[0].bmd_url)
-        appservhost=$(uci get wifidog.@wifidog[0].appservhost)
-        appservport=$(uci get wifidog.@wifidog[0].appservport)
-        appservpath=$(uci get wifidog.@wifidog[0].appservpath)
-        appservhost1=$(uci get wifidog.@wifidog[0].appservhost1)
-        appservport1=$(uci get wifidog.@wifidog[0].appservport1)
-        appservpath1=$(uci get wifidog.@wifidog[0].appservpath1)
-        appservhost2=$(uci get wifidog.@wifidog[0].appservhost2)
-        appservport2=$(uci get wifidog.@wifidog[0].appservport2)
-        appservpath2=$(uci get wifidog.@wifidog[0].appservpath2)
-	thread_watchdog_timeout=$(uci get wifidog.@wifidog[0].thread_watchdog_timeout)
-	auto_ssid=$(uci get wifidog.@wifidog[0].auto_ssid)
-	auto_password=$(uci get wifidog.@wifidog[0].auto_password)
+    gateway_interface=$(uci get wifidog.@wifidog[0].gateway_interface)
+    gateway_eninterface=$(uci get wifidog.@wifidog[0].gateway_eninterface)
+    gateway_hostname=$(uci get wifidog.@wifidog[0].gateway_hostname)
+    gateway_httpport=$(uci get wifidog.@wifidog[0].gateway_httpport)
+    gateway_path=$(uci get wifidog.@wifidog[0].gateway_path)
+    gateway_connmax=$(uci get wifidog.@wifidog[0].gateway_connmax)
+    ssl_enable=$(uci get wifidog.@wifidog[0].ssl_enable)
+    check_interval=$(uci get wifidog.@wifidog[0].check_interval)
+    client_timeout=$(uci get wifidog.@wifidog[0].client_timeout)
+    sslport=$(uci get wifidog.@wifidog[0].sslport)
+    deamo_enable=$(uci get wifidog.@wifidog[0].deamo_enable)
+    gatewayport=$(uci get wifidog.@wifidog[0].gatewayport)
+    myz_mac=$(uci get wifidog.@wifidog[0].myz_mac)
+    bmd_url=$(uci get wifidog.@wifidog[0].bmd_url)
+    appservhost=$(uci get wifidog.@wifidog[0].appservhost)
+    appservport=$(uci get wifidog.@wifidog[0].appservport)
+    appservpath=$(uci get wifidog.@wifidog[0].appservpath)
+    thread_watchdog_timeout=$(uci get wifidog.@wifidog[0].thread_watchdog_timeout)
+    auto_ssid=$(uci get wifidog.@wifidog[0].auto_ssid)
+    auto_password=$(uci get wifidog.@wifidog[0].auto_password)
     auto_wireless_pw=$(uci get wifidog.@wifidog[0].auto_wireless_pw)
     qos_enable=$(uci get wifidog.@wifidog[0].qos_enable)
     uplink_vip=$(uci get wifidog.@wifidog[0].uplink_vip)
@@ -51,15 +57,15 @@ config_load()
     downlink_common=$(uci get wifidog.@wifidog[0].downlink_common)
     wd_auth_mode=$(uci get wifidog.@wifidog[0].auth_mode)
     wd_wechat_officialAccount=$(uci get wifidog.@wifidog[0].wechat_officialAccount)
-	wd_wechat_shopId=$(uci get wifidog.@wifidog[0].wechat_shopId)
-	wd_wechat_appId=$(uci get wifidog.@wifidog[0].wechat_appId)
-	wd_wechat_secretKey=$(uci get wifidog.@wifidog[0].wechat_secretKey)
-	wd_wechat_extend=$(uci get wifidog.@wifidog[0].wechat_extend)
-	wd_wechat_forceAttention=$(uci get wifidog.@wifidog[0].wechat_forceAttention)
-	wd_to_url=$(uci get wifidog.@wifidog[0].to_url)
-	wd_skip_SuccessPage=$(uci get wifidog.@wifidog[0].skip_SuccessPage)
-	wd_reAssoc_reAuth=$(uci get wifidog.@wifidog[0].reAssoc_reAuth)
-        proxyport=$(uci get wifidog.@wifidog[0].proxyport)
+    wd_wechat_shopId=$(uci get wifidog.@wifidog[0].wechat_shopId)
+    wd_wechat_appId=$(uci get wifidog.@wifidog[0].wechat_appId)
+    wd_wechat_secretKey=$(uci get wifidog.@wifidog[0].wechat_secretKey)
+    wd_wechat_extend=$(uci get wifidog.@wifidog[0].wechat_extend)
+    wd_wechat_forceAttention=$(uci get wifidog.@wifidog[0].wechat_forceAttention)
+    wd_to_url=$(uci get wifidog.@wifidog[0].to_url)
+    wd_skip_SuccessPage=$(uci get wifidog.@wifidog[0].skip_SuccessPage)
+    wd_reAssoc_reAuth=$(uci get wifidog.@wifidog[0].reAssoc_reAuth)
+    proxyport=$(uci get wifidog.@wifidog[0].proxyport)
 
 echo "
 GatewayID $gateway_id
@@ -71,21 +77,11 @@ AuthServer {
 	SSLPort $sslport
 	HTTPPort $gateway_httpport
 	Path $gateway_path
-	}
+}
 AppServer {
     appservhost $appservhost
     appservport $appservport
     appservpath $appservpath
-}
-AppServer {
-    appservhost $appservhost1
-    appservport $appservport1
-    appservpath $appservpath1
-}
-AppServer {
-    appservhost $appservhost2
-    appservport $appservport2
-    appservpath $appservpath2
 }
 Daemon $deamo_enable
 GatewayPort $gatewayport
@@ -115,10 +111,11 @@ Wd_reAssoc_reAuth $wd_reAssoc_reAuth
 proxyport $proxyport
 
 FirewallRuleSet global {
-FirewallRule allow to 168.95.1.1
-FirewallRule allow to 210.106.0.20
-FirewallRule allow to 114.114.114.114
+    FirewallRule allow to 168.95.1.1
+    FirewallRule allow to 210.106.0.20
+    FirewallRule allow to 114.114.114.114
 }
+
 FirewallRuleSet validating-users {
     FirewallRule allow to 0.0.0.0/0
 }
@@ -138,6 +135,8 @@ FirewallRuleSet locked-users {
     FirewallRule block to 0.0.0.0/0
 }
 " >> /etc/wifidog.conf
+
+    white_url_load
 }
 
 white_url_init() {
@@ -149,11 +148,11 @@ white_url_init() {
 		iptables -t nat -A WiFiDog_br0_WhiteUrl  -d $x -j ACCEPT
 	done
 }
-  
+
 start() {
 	config_load
 	/usr/bin/wifidog-init start
-	white_url_init
+	#white_url_init
 }
 
 stop() {
@@ -169,14 +168,14 @@ restart() {
         sleep 4
         config_load
         /usr/bin/wifidog-init start
-		white_url_init
+		#white_url_init
 }
- 
-reload() {                        
+
+reload() {
         /usr/bin/wifidog-init stop
         sleep 4
         config_load
         /usr/bin/wifidog-init start
-		white_url_init
+		#white_url_init
 }
 

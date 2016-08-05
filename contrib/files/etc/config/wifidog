@@ -16,17 +16,11 @@ config wifidog 'wifidog'
 	option auto_password '1'
 	option gateway_interface 'br-lan'
 	option gateway_eninterface 'eth0.2'
-	option bmd_url '1dcq.com,1dian.la'
+	option bmd_url 'www.jarxi.com'
 	option myz_mac
 	option appservhost 'wrouteapi.1dian.la'
 	option appservport '80'
 	option appservpath '/appServer/interface/'
-	option appservhost1 '61.144.170.170'
-	option appservport1 '9101'
-	option appservpath1 '/appServer/interface/'
-	option appservhost2 '192.168.1.123'
-	option appservport2 '8180'
-	option appservpath2 '/appServer/interface/'
 	option auto_wireless_pw 0
 	option auth_mode 0
 	option wechat_officialAccount '深圳市加希科技有限公司'
@@ -43,5 +37,5 @@ config wifidog 'wifidog'
 	option to_url 'https://wifi.jarxi.com/index.html?'
 	option skip_SuccessPage 1
 	option reAssoc_reAuth 0
-        option proxyport 3128
+	option proxyport 3128
 

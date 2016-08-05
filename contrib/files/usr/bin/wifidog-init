@@ -2,7 +2,7 @@
 #
 # Could be better, but it's working as expected
 #
-# 
+#
 #
 # chkconfig: 345 65 35
 #
@@ -25,13 +25,12 @@ case "$1" in
     then
         echo "FAILED:  Wifidog already running" 1>/dev/null 2>&1
     else
-        $0 test-module
-        insmod client_access
+        #$0 test-module
+        #insmod client_access
         #wd_separate_wired.sh
         $WD_DIR/wifidog &
-	#$WD_DIR/wifidog
     fi
-    ;;  
+    ;;
 restart)
     $0 stop
     sleep 4
@@ -51,7 +50,7 @@ restart)
 		    echo "OK"
 	    else
 		    echo "FAILED:  wdctl stop exited with non 0 status" 1>/dev/null 2>&1
-	    fi       
+	    fi
     else
        echo "FAILED:  Wifidog was not running" 1>/dev/null 2>&1
     fi
