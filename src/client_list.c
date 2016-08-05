@@ -171,7 +171,7 @@ static int client_list_clean(void)
     hold.func = client_list_clean_condition;
     hold.args = &average_time;
     hold.head = &clean_list;
-    if (client_list_traverse((CLIENT_LIST_CONDITION_FUNC)client_list_hold, &hold)) {
+    if (client_list_traverse((CLIENT_LIST_TRAVERSE_FUNC)client_list_hold, &hold)) {
         return -1;
     }
 
@@ -260,6 +260,7 @@ int client_list_add(const char *mac)
     new_node->counters.last_updated = 0;
     new_node->dos_count = 0;
     new_node->allow_time = 0;
+    new_node->duration = 0;
     hlist_add_head(&new_node->hash, &client_list[key]);
     client_num++;
     pthread_mutex_unlock(&client_list_mutex);
@@ -358,7 +359,7 @@ static int client_list_iterator(char *mac)
  *      -1: do func error
  *       0: success
  */
-int client_list_traverse(_IN CLIENT_LIST_CONDITION_FUNC func, _IN _OUT void *arg)
+int client_list_traverse(_IN CLIENT_LIST_TRAVERSE_FUNC func, _IN _OUT void *arg)
 {
     char mac[MAC_ADDR_LEN] = {0};
     client_t *p_find_client;
@@ -401,7 +402,7 @@ int client_list_hold(const client_t *client, client_list_hold_t *hold)
 {
     client_hold_t *new_node;
     list_head_t *head;
-    
+
 #if CLIENT_LIST_CHECK_CAREFUL
     if (!client || !hold || !hold->head) {
         return -1;
@@ -465,21 +466,21 @@ int client_list_statistics(CLIENT_LIST_CONDITION_FUNC func, void *args)
             return 0;
         }
 #endif
-    
+
     memset(&hold, 0, sizeof(client_list_hold_t));
     hold.func = func;
     hold.args = args;
-    if(client_list_traverse((CLIENT_LIST_CONDITION_FUNC)client_list_statistics_count, &hold)) {
+    if(client_list_traverse((CLIENT_LIST_TRAVERSE_FUNC)client_list_statistics_count, &hold)) {
         return 0;
     }
-    
+
     return hold.count;
 }
 
 int client_list_is_connect_really(const char *mac)
 {
     time_t last_updated;
-    
+
 #if CLIENT_LIST_CHECK_CAREFUL
     if (!mac || !client_clist_exist() || !is_mac_valid(mac)) {
         return 0;
@@ -519,7 +520,7 @@ int client_list_get_ip(const char *mac, char *buf)
 int client_list_set_ip(const char *mac, const char *ip)
 {
     client_t *client;
-    
+
 #if CLIENT_LIST_CHECK_CAREFUL
     if (!mac || !ip || !client_clist_exist() || !is_mac_valid(mac) || !is_ip_valid(ip)) {
         return -1;
@@ -545,7 +546,7 @@ int client_list_set_ip(const char *mac, const char *ip)
 int client_list_get_token(const char *mac, char *buf)
 {
     client_t *client;
-    
+
 #if CLIENT_LIST_CHECK_CAREFUL
     if (!mac || !buf || !client_clist_exist() || !is_mac_valid(mac)) {
         return -1;
@@ -568,7 +569,7 @@ int client_list_get_token(const char *mac, char *buf)
 int client_list_set_token(const char *mac, const char *token)
 {
     client_t *client;
-    
+
 #if CLIENT_LIST_CHECK_CAREFUL
     if (!mac || !token || !client_clist_exist() || !is_mac_valid(mac)) {
         return -1;
@@ -594,7 +595,7 @@ int client_list_set_token(const char *mac, const char *token)
 int client_list_get_openid(const char *mac, char *buf)
 {
     client_t *client;
-    
+
 #if CLIENT_LIST_CHECK_CAREFUL
     if (!mac || !buf || !client_clist_exist() || !is_mac_valid(mac)) {
         return -1;
@@ -617,7 +618,7 @@ int client_list_get_openid(const char *mac, char *buf)
 int client_list_set_openid(const char *mac, const char *openid)
 {
     client_t *client;
-    
+
 #if CLIENT_LIST_CHECK_CAREFUL
     if (!mac || !openid || !client_clist_exist() || !is_mac_valid(mac)) {
         return -1;
@@ -643,7 +644,7 @@ int client_list_set_openid(const char *mac, const char *openid)
 int client_list_get_auth(const char *mac, int *buf)
 {
     client_t *client;
-    
+
 #if CLIENT_LIST_CHECK_CAREFUL
     if (!mac || !buf || !client_clist_exist() || !is_mac_valid(mac)) {
         return -1;
@@ -666,7 +667,8 @@ int client_list_get_auth(const char *mac, int *buf)
 int client_list_set_auth(const char *mac, int auth)
 {
     client_t *client;
-    
+    s_config *config = config_get_config();
+
 #if CLIENT_LIST_CHECK_CAREFUL
     if (!mac || !client_clist_exist() || !is_mac_valid(mac)) {
         return -1;
@@ -681,6 +683,13 @@ int client_list_set_auth(const char *mac, int auth)
         return -1;
     }
     client->auth = auth;
+    if (auth >= CLIENT_VIP) {
+        client->duration = CLIENT_TIME_LOCAL_VIP * config->checkinterval;
+    } else if (auth >= CLIENT_COMMON) {
+        client->duration = CLIENT_TIME_LOCAL_COMMON * config->checkinterval;
+    } else {
+        client->duration = CLIENT_TIME_LOCAL_UNAUTH * config->checkinterval;
+    }
     pthread_mutex_unlock(&client_list_mutex);
 
     return 0;
@@ -689,7 +698,7 @@ int client_list_set_auth(const char *mac, int auth)
 int client_list_get_fw_state(const char *mac, unsigned int *buf)
 {
     client_t *client;
-    
+
 #if CLIENT_LIST_CHECK_CAREFUL
     if (!mac || !buf || !client_clist_exist() || !is_mac_valid(mac)) {
         return -1;
@@ -712,7 +721,7 @@ int client_list_get_fw_state(const char *mac, unsigned int *buf)
 int client_list_set_fw_state(const char *mac, unsigned int fw_state)
 {
     client_t *client;
-    
+
 #if CLIENT_LIST_CHECK_CAREFUL
     if (!mac || !client_clist_exist() || !is_mac_valid(mac)) {
         return -1;
@@ -735,7 +744,7 @@ int client_list_set_fw_state(const char *mac, unsigned int fw_state)
 int client_list_get_allow_time(const char *mac, time_t *buf)
 {
     client_t *client;
-    
+
 #if CLIENT_LIST_CHECK_CAREFUL
     if (!mac || !buf || !client_clist_exist() || !is_mac_valid(mac)) {
         return -1;
@@ -758,7 +767,7 @@ int client_list_get_allow_time(const char *mac, time_t *buf)
 int client_list_set_allow_time(const char *mac, time_t allow_time)
 {
     client_t *client;
-    
+
 #if CLIENT_LIST_CHECK_CAREFUL
     if (!mac || !client_clist_exist() || !is_mac_valid(mac)) {
         return -1;
@@ -778,12 +787,57 @@ int client_list_set_allow_time(const char *mac, time_t allow_time)
     return 0;
 }
 
+int client_list_get_duration(const char *mac, time_t *buf)
+{
+    client_t *client;
+
+#if CLIENT_LIST_CHECK_CAREFUL
+    if (!mac || !buf || !client_clist_exist() || !is_mac_valid(mac)) {
+        return -1;
+    }
+#endif
+
+    pthread_mutex_lock(&client_list_mutex);
+    client = client_list_search(mac);
+    if (!client) {
+        pthread_mutex_unlock(&client_list_mutex);
+        debug(LOG_INFO, "can not find mac %s", mac);
+        return -1;
+    }
+    *buf = client->duration;
+    pthread_mutex_unlock(&client_list_mutex);
+
+    return 0;
+}
+
+int client_list_set_duration(const char *mac, time_t duration)
+{
+    client_t *client;
+
+#if CLIENT_LIST_CHECK_CAREFUL
+    if (!mac || !client_clist_exist() || !is_mac_valid(mac)) {
+        return -1;
+    }
+#endif
+
+    pthread_mutex_lock(&client_list_mutex);
+    client = client_list_search(mac);
+    if (!client) {
+        pthread_mutex_unlock(&client_list_mutex);
+        debug(LOG_INFO, "can not find mac %s", mac);
+        return -1;
+    }
+    client->duration = duration;
+    pthread_mutex_unlock(&client_list_mutex);
+
+    return 0;
+}
+
 int client_list_get_remain_allow_time(const char *mac, unsigned int *buf)
 {
     client_t *client;
-    time_t	current_time = time(NULL);
     int remain = 0;
-    
+
 #if CLIENT_LIST_CHECK_CAREFUL
     if (!mac || !buf || !client_clist_exist() || !is_mac_valid(mac)) {
         return -1;
@@ -798,15 +852,7 @@ int client_list_get_remain_allow_time(const char *mac, unsigned int *buf)
         return -1;
     }
 
-    if (client->allow_time /* && client->fw_state == CLIENT_ALLOWED*/) {
-        if (client->auth >= CLIENT_VIP) {
-            remain = (CLIENT_TIME_LOCAL_WECHAT_VIP * config_get_config()->checkinterval - (current_time - client->allow_time));
-        } else if (client->auth >= CLIENT_COMMON) {
-            remain = (CLIENT_TIME_LOCAL_WECHAT_COMMON * config_get_config()->checkinterval - (current_time - client->allow_time));
-        } else {
-            remain = (CLIENT_TIME_LOCAL_WECHAT_UNAUTH * config_get_config()->checkinterval - (current_time - client->allow_time));
-        }
-    }
+    remain = client->duration - (time(NULL) - client->allow_time);
 
     if (remain < 0) {
         *buf = 0;
@@ -817,7 +863,7 @@ int client_list_get_remain_allow_time(const char *mac, unsigned int *buf)
         pthread_mutex_unlock(&client_list_mutex);
         return 0;
     }
-    
+
     pthread_mutex_unlock(&client_list_mutex);
     return 0;
 }
@@ -848,7 +894,7 @@ int client_list_get_tracked(const char *mac, unsigned int *buf)
 int client_list_set_tracked(const char *mac, unsigned int tracked)
 {
     client_t *client;
-    
+
 #if CLIENT_LIST_CHECK_CAREFUL
     if (!mac || !client_clist_exist() || !is_mac_valid(mac)) {
         return -1;
@@ -871,7 +917,7 @@ int client_list_set_tracked(const char *mac, unsigned int tracked)
 int client_list_get_last_updated(const char *mac, time_t *buf)
 {
     client_t *client;
-    
+
 #if CLIENT_LIST_CHECK_CAREFUL
     if (!mac || !buf || !client_clist_exist() || !is_mac_valid(mac)) {
         return -1;
@@ -894,7 +940,7 @@ int client_list_get_last_updated(const char *mac, time_t *buf)
 int client_list_set_last_updated(const char *mac, time_t last_updated)
 {
     client_t *client;
-    
+
 #if CLIENT_LIST_CHECK_CAREFUL
     if (!mac || !client_clist_exist() || !is_mac_valid(mac)) {
         return -1;
@@ -917,7 +963,7 @@ int client_list_set_last_updated(const char *mac, time_t last_updated)
 int client_list_get_incoming(const char *mac, unsigned long long *buf)
 {
     client_t *client;
-    
+
 #if CLIENT_LIST_CHECK_CAREFUL
     if (!mac || !buf || !client_clist_exist() || !is_mac_valid(mac)) {
         return -1;
@@ -940,7 +986,7 @@ int client_list_get_incoming(const char *mac, unsigned long long *buf)
 int client_list_set_incoming(const char *mac, unsigned long long incoming)
 {
     client_t *client;
-    
+
 #if CLIENT_LIST_CHECK_CAREFUL
     if (!mac || !client_clist_exist() || !is_mac_valid(mac)) {
         return -1;
@@ -963,7 +1009,7 @@ int client_list_set_incoming(const char *mac, unsigned long long incoming)
 int client_list_get_outgoing(const char *mac, unsigned long long *buf)
 {
     client_t *client;
-    
+
 #if CLIENT_LIST_CHECK_CAREFUL
     if (!mac || !buf || !client_clist_exist() || !is_mac_valid(mac)) {
         return -1;
@@ -986,7 +1032,7 @@ int client_list_get_outgoing(const char *mac, unsigned long long *buf)
 int client_list_set_outgoing(const char *mac, unsigned long long outgoing)
 {
     client_t *client;
-    
+
 #if CLIENT_LIST_CHECK_CAREFUL
     if (!mac || !client_clist_exist() || !is_mac_valid(mac)) {
         return -1;
@@ -1009,7 +1055,7 @@ int client_list_set_outgoing(const char *mac, unsigned long long outgoing)
 int client_list_get_uplink_limit(const char *mac, unsigned int *buf)
 {
     client_t *client;
-    
+
 #if CLIENT_LIST_CHECK_CAREFUL
     if (!mac || !buf || !client_clist_exist() || !is_mac_valid(mac)) {
         return -1;
@@ -1032,7 +1078,7 @@ int client_list_get_uplink_limit(const char *mac, unsigned int *buf)
 int client_list_set_uplink_limit(const char *mac, unsigned int uplink_limit)
 {
     client_t *client;
-    
+
 #if CLIENT_LIST_CHECK_CAREFUL
     if (!mac || !client_clist_exist() || !is_mac_valid(mac)) {
         return -1;
@@ -1055,7 +1101,7 @@ int client_list_set_uplink_limit(const char *mac, unsigned int uplink_limit)
 int client_list_get_downlink_limit(const char *mac, unsigned int *buf)
 {
     client_t *client;
-    
+
 #if CLIENT_LIST_CHECK_CAREFUL
     if (!mac || !buf || !client_clist_exist() || !is_mac_valid(mac)) {
         return -1;
@@ -1078,7 +1124,7 @@ int client_list_get_downlink_limit(const char *mac, unsigned int *buf)
 int client_list_set_downlink_limit(const char *mac, unsigned int downlink_limit)
 {
     client_t *client;
-    
+
 #if CLIENT_LIST_CHECK_CAREFUL
     if (!mac || !client_clist_exist() || !is_mac_valid(mac)) {
         return -1;
@@ -1101,7 +1147,7 @@ int client_list_set_downlink_limit(const char *mac, unsigned int downlink_limit)
 int client_list_get_qos_seq(const char *mac, unsigned int *buf)
 {
     client_t *client;
-    
+
 #if CLIENT_LIST_CHECK_CAREFUL
     if (!mac || !buf || !client_clist_exist() || !is_mac_valid(mac)) {
         return -1;
@@ -1124,7 +1170,7 @@ int client_list_get_qos_seq(const char *mac, unsigned int *buf)
 int client_list_set_qos_seq(const char *mac, unsigned int qos_seq)
 {
     client_t *client;
-    
+
 #if CLIENT_LIST_CHECK_CAREFUL
     if (!mac || !client_clist_exist() || !is_mac_valid(mac)) {
         return -1;
@@ -1147,7 +1193,7 @@ int client_list_set_qos_seq(const char *mac, unsigned int qos_seq)
 int client_list_clear_qos_seq(const char *mac)
 {
     client_t *client;
-    
+
 #if CLIENT_LIST_CHECK_CAREFUL
     if (!mac || !client_clist_exist() || !is_mac_valid(mac)) {
         return -1;
@@ -1170,7 +1216,7 @@ int client_list_clear_qos_seq(const char *mac)
 int client_list_get_hostname(const char *mac, char *buf)
 {
     client_t *client;
-    
+
 #if CLIENT_LIST_CHECK_CAREFUL
     if (!mac || !buf || !client_clist_exist() || !is_mac_valid(mac)) {
         return -1;
@@ -1193,7 +1239,7 @@ int client_list_get_hostname(const char *mac, char *buf)
 int client_list_set_hostname(const char *mac, const char *hostname)
 {
     client_t *client;
-    
+
 #if CLIENT_LIST_CHECK_CAREFUL
     if (!mac || !hostname || !client_clist_exist() || !is_mac_valid(mac)) {
         return -1;
@@ -1219,7 +1265,7 @@ int client_list_set_hostname(const char *mac, const char *hostname)
 int client_list_get_recent_req(const char *mac, char *buf)
 {
     client_t *client;
-    
+
 #if CLIENT_LIST_CHECK_CAREFUL
     if (!mac || !buf || !client_clist_exist() || !is_mac_valid(mac)) {
         return -1;
@@ -1242,7 +1288,7 @@ int client_list_get_recent_req(const char *mac, char *buf)
 int client_list_set_recent_req(const char *mac, const char *recent_req)
 {
     client_t *client;
-    
+
 #if CLIENT_LIST_CHECK_CAREFUL
     if (!mac || !recent_req || !client_clist_exist() || !is_mac_valid(mac)) {
         return -1;
@@ -1270,7 +1316,7 @@ int client_list_set_recent_req(const char *mac, const char *recent_req)
 int client_list_get_client(const char *mac, client_t *buf)
 {
     client_t *client;
-    
+
 #if CLIENT_LIST_CHECK_CAREFUL
     if (!mac || !buf || !client_clist_exist() || !is_mac_valid(mac)) {
         return -1;
@@ -1293,7 +1339,7 @@ int client_list_get_client(const char *mac, client_t *buf)
 int client_list_set_client(const char *mac, client_t *client_setting)
 {
     client_t *client;
-    
+
 #if CLIENT_LIST_CHECK_CAREFUL
     if (!mac || !client_setting || !client_clist_exist() || !is_mac_valid(mac)) {
         return -1;
@@ -1316,7 +1362,7 @@ int client_list_set_client(const char *mac, client_t *client_setting)
 int client_list_get_dos_count(const char *mac, unsigned int *buf)
 {
     client_t *client;
-    
+
 #if CLIENT_LIST_CHECK_CAREFUL
     if (!mac || !buf || !client_clist_exist() || !is_mac_valid(mac)) {
         return -1;
@@ -1339,7 +1385,7 @@ int client_list_get_dos_count(const char *mac, unsigned int *buf)
 int client_list_increase_dos_count(const char *mac)
 {
     client_t *client;
-    
+
 #if CLIENT_LIST_CHECK_CAREFUL
     if (!mac || !client_clist_exist() || !is_mac_valid(mac)) {
         return -1;
@@ -1362,7 +1408,7 @@ int client_list_increase_dos_count(const char *mac)
 int client_list_clear_dos_count(const char *mac)
 {
     client_t *client;
-    
+
 #if CLIENT_LIST_CHECK_CAREFUL
     if (!mac || !client_clist_exist() || !is_mac_valid(mac)) {
         return -1;
@@ -1385,7 +1431,7 @@ int client_list_clear_dos_count(const char *mac)
 static int client_list_ip_to_mac(const client_t *client,  _IN _OUT void *arg)
 {
     char *ip = arg;
-    
+
 #if CLIENT_LIST_CHECK_CAREFUL
     if (!client || !is_ip_valid(ip)) {
         return -1;
@@ -1404,7 +1450,7 @@ static int client_list_ip_to_mac(const client_t *client,  _IN _OUT void *arg)
 static int client_list_token_to_mac(const client_t *client,  _IN _OUT void *arg)
 {
     char *token = arg;
-    
+
 #if CLIENT_LIST_CHECK_CAREFUL
     if (!client || !token) {
         return -1;
@@ -1424,7 +1470,7 @@ int client_list_find_mac_by_ip(_IN char *ip, _OUT char *mac)
 {
     client_t *client;
     char buf[MAC_ADDR_LEN];
-    
+
 #if CLIENT_LIST_CHECK_CAREFUL
     if (!client_clist_exist() || !is_ip_valid(ip)) {
         return -1;
@@ -1475,7 +1521,7 @@ int client_list_find_mac_by_ip_exclude(_IN char *ip, _IN char *mac, _OUT char *b
 {
     client_t *client;
     find_t find_arg;
-    
+
 #if CLIENT_LIST_CHECK_CAREFUL
     if (!is_mac_valid(mac) || !buf || !client_clist_exist() || !is_ip_valid(ip)) {
         return -1;
@@ -1490,7 +1536,7 @@ int client_list_find_mac_by_ip_exclude(_IN char *ip, _IN char *mac, _OUT char *b
     memset(&find_arg, 0, sizeof(find_t));
     memcpy(find_arg.ip, ip, strlen(ip));
     memcpy(find_arg.exclude_mac, mac, MAC_ADDR_LEN);
-    if (client_list_traverse((CLIENT_LIST_CONDITION_FUNC)client_list_ip_to_mac_exclude, &find_arg)) {
+    if (client_list_traverse((CLIENT_LIST_TRAVERSE_FUNC)client_list_ip_to_mac_exclude, &find_arg)) {
         debug(LOG_DEBUG, "can not get mac using ip %s", ip);
         return -1;
     }
@@ -1509,7 +1555,7 @@ int client_list_find_mac_by_token(_IN char *token, _OUT char *mac)
 {
     client_t *client;
     char buf[MAX_TOKEN_LEN];
-    
+
 #if CLIENT_LIST_CHECK_CAREFUL
     if (!client_clist_exist() || !token) {
         return -1;
@@ -1548,7 +1594,7 @@ int client_list_find_mac_by_openid_exclude(_IN char *openid, _IN char *mac, _OUT
 {
     client_t *client;
     find_t find_arg;
-    
+
 #if CLIENT_LIST_CHECK_CAREFUL
     if (!is_mac_valid(mac) || !buf || !client_clist_exist() || !openid) {
         return -1;
@@ -1563,7 +1609,7 @@ int client_list_find_mac_by_openid_exclude(_IN char *openid, _IN char *mac, _OUT
     memset(&find_arg, 0, sizeof(find_t));
     memcpy(find_arg.openid, openid, strlen(openid));
     memcpy(find_arg.exclude_mac, mac, MAC_ADDR_LEN);
-    if (client_list_traverse((CLIENT_LIST_CONDITION_FUNC)client_list_openid_to_mac_exclude, &find_arg)) {
+    if (client_list_traverse((CLIENT_LIST_TRAVERSE_FUNC)client_list_openid_to_mac_exclude, &find_arg)) {
         debug(LOG_DEBUG, "can not get mac using openid %s", openid);
         return -1;
     }
@@ -1581,7 +1627,7 @@ int client_list_find_mac_by_openid_exclude(_IN char *openid, _IN char *mac, _OUT
 int client_list_peek(const char *mac)
 {
     client_t *client;
-    
+
 #if CLIENT_LIST_CHECK_CAREFUL
     if (!client_clist_exist()) {
         return -1;
@@ -1610,7 +1656,7 @@ int client_list_peek(const char *mac)
 }
 
 static int client_list_peek_free_lock(const client_t *client, void *arg)
-{    
+{
 #if CLIENT_LIST_CHECK_CAREFUL
     if (!client || !client_clist_exist()) {
         return -1;
@@ -1631,7 +1677,7 @@ static int client_list_peek_free_lock(const client_t *client, void *arg)
 int client_list_dump()
 {
     client_t *client;
-    
+
 #if CLIENT_LIST_CHECK_CAREFUL
     if (!client_clist_exist()) {
         return -1;
@@ -1668,7 +1714,7 @@ static int client_list_calibration_time_free_lock(const client_t *client_in, voi
 void client_list_calibration_time(void)
 {
     client_t *client;
-        
+
 #if CLIENT_LIST_CHECK_CAREFUL
     if (!client_clist_exist()) {
         return;

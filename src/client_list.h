@@ -41,6 +41,7 @@ typedef struct client_s {
     unsigned int        fw_state;           /* 0, 1 */
     unsigned int        tracked;            /* 0, 1 */
     time_t              allow_time;
+    time_t              duration;           /* how much seconds for allow */
     char                recent_req[MAX_RECORD_URL_LEN];
     unsigned int        dos_count;
     counters_t          counters;
@@ -52,6 +53,7 @@ typedef struct client_hold_s {
 } client_hold_t;
 
 typedef int (*CLIENT_LIST_CONDITION_FUNC)(const client_t *client, _IN void *args);
+typedef int (*CLIENT_LIST_TRAVERSE_FUNC)(const client_t *client, _IN void *args);
 typedef struct client_list_hold_s {
     list_head_t *head;
     unsigned int count;
@@ -76,9 +78,9 @@ enum Client_live_time_e {
 };
 
 enum Client_allow_time_e {
-    CLIENT_TIME_LOCAL_WECHAT_UNAUTH = (10UL),
-    CLIENT_TIME_LOCAL_WECHAT_COMMON = (30UL),
-    CLIENT_TIME_LOCAL_WECHAT_VIP = (12 * 60UL),
+    CLIENT_TIME_LOCAL_UNAUTH = (10UL),
+    CLIENT_TIME_LOCAL_COMMON = (30UL),
+    CLIENT_TIME_LOCAL_VIP = (12 * 60UL),
 };
 
 enum Client_fw_state_e {
@@ -112,7 +114,7 @@ int client_list_del(const char *mac);
  *      -1: do func error
  *       0: success
  */
-int client_list_traverse(_IN CLIENT_LIST_CONDITION_FUNC func, _IN _OUT void *arg);
+int client_list_traverse(_IN CLIENT_LIST_TRAVERSE_FUNC func, _IN _OUT void *arg);
 
 /**
  * CCC: only use for client_list_traverse
@@ -140,6 +142,8 @@ int client_list_get_fw_state(const char *mac, unsigned int *buf);
 int client_list_set_fw_state(const char *mac, unsigned int fw_state);
 int client_list_get_allow_time(const char *mac, time_t *buf);
 int client_list_set_allow_time(const char *mac, time_t allow_time);
+int client_list_get_duration(const char *mac, time_t *buf);
+int client_list_set_duration(const char *mac, time_t duration);
 int client_list_get_remain_allow_time(const char *mac, unsigned int *buf);
 int client_list_get_last_updated(const char *mac, time_t *buf);
 int client_list_set_last_updated(const char *mac, time_t last_updated);

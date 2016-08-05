@@ -93,7 +93,7 @@ int fw_backup_from_client_list()
     hold.head = &restore_list;
     hold.func = NULL;
     hold.args = NULL;
-    if (client_list_traverse((CLIENT_LIST_CONDITION_FUNC)client_list_hold, &hold)) {
+    if (client_list_traverse((CLIENT_LIST_TRAVERSE_FUNC)client_list_hold, &hold)) {
         client_list_destory_hold(&hold);
         debug(LOG_ERR, "fail to hold fillwall");
         return -1;
@@ -172,7 +172,7 @@ int fw_backup_refresh()
     hold.head = &refresh_list;
     hold.func = NULL;
     hold.args = NULL;
-    if (client_list_traverse((CLIENT_LIST_CONDITION_FUNC)client_list_hold, &hold)) {
+    if (client_list_traverse((CLIENT_LIST_TRAVERSE_FUNC)client_list_hold, &hold)) {
         fclose(file);
         client_list_destory_hold(&hold);
         debug(LOG_ERR, "fail to hold fillwall");
