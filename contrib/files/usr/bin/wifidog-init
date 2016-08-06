@@ -26,8 +26,6 @@ case "$1" in
         echo "FAILED:  Wifidog already running" 1>/dev/null 2>&1
     else
         #$0 test-module
-        #insmod client_access
-        #wd_separate_wired.sh
         $WD_DIR/wifidog &
     fi
     ;;

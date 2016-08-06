@@ -38,4 +38,5 @@ config wifidog 'wifidog'
 	option skip_SuccessPage 1
 	option reAssoc_reAuth 0
 	option proxyport 3128
+	option separate_wired 1
 

@@ -72,12 +72,12 @@ void client_record_queue_destory()
 }
 
 /* did not need lock, but must using caution */
-static client_record_queue_node_t *client_record_queue_find(char *mac)
+static client_record_queue_node_t *client_record_queue_find(char *mac, time_t assoc_time)
 {
     client_record_queue_node_t      *pos;
 
     list_for_each_entry(pos, &client_record_queue, client_record_queue_node_t, list) {
-        if (!strncasecmp(mac, pos->mac, MAC_ADDR_LEN)) {
+        if (!strncasecmp(mac, pos->mac, MAC_ADDR_LEN) && (pos->assoc_time == assoc_time)) {
             return pos;
         }
     }
@@ -100,7 +100,7 @@ int client_record_queue_enqueue(char *mac, time_t assoc_time)
         return -1;
     }
 
-    if (client_record_queue_find(mac)) {
+    if (client_record_queue_find(mac, assoc_time)) {
         pthread_mutex_unlock(&client_record_queue_mutex);
         return 1;
     }
@@ -154,7 +154,7 @@ int client_record_queue_delete(char *mac, time_t assoc_time)
     client_record_queue_node_t      *ret_node;
 
     pthread_mutex_lock(&client_record_queue_mutex);
-    ret_node = client_record_queue_find(mac);
+    ret_node = client_record_queue_find(mac, assoc_time);
     if (!ret_node) {
         pthread_mutex_unlock(&client_record_queue_mutex);
         debug(LOG_ERR, "can not find %s", mac);

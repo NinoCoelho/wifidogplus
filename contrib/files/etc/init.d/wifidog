@@ -139,20 +139,17 @@ FirewallRuleSet locked-users {
     white_url_load
 }
 
-white_url_init() {
-	url_ch=`echo $bmd_url | sed 's/,/ /g'`
-	sleep 4
-	for x in $url_ch
-	do
-		iptables -t filter -A  WiFiDog_br0_WhiteUrl -d $x -j ACCEPT
-		iptables -t nat -A WiFiDog_br0_WhiteUrl  -d $x -j ACCEPT
-	done
+separate_wired() {
+    separate_wired=$(uci get wifidog.@wifidog[0].separate_wired)
+    if [ "$separate_wired" = '1' ]; then
+	    wd_separate_wired.sh
+	fi
 }
 
 start() {
 	config_load
 	/usr/bin/wifidog-init start
-	#white_url_init
+	separate_wired
 }
 
 stop() {
@@ -168,7 +165,7 @@ restart() {
         sleep 4
         config_load
         /usr/bin/wifidog-init start
-		#white_url_init
+        separate_wired
 }
 
 reload() {
@@ -176,6 +173,6 @@ reload() {
         sleep 4
         config_load
         /usr/bin/wifidog-init start
-		#white_url_init
+        separate_wired
 }
 

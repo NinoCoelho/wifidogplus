@@ -130,7 +130,7 @@ static int backup_config(void)
     if (execute_cmd("backup_config.sh", NULL)) {
         debug(LOG_ERR, "fail to run backup_config.sh");
     }
-    
+
 #ifdef __MTK_SDK__
     if (bl_set_config("SoftVerMTD", SF_VERSION)) {
         debug(LOG_ERR, "fail to set version");
