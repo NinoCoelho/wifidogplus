@@ -57,7 +57,7 @@
 #define OPEN_THREAD_TEST                    (0)
 #if 1
 #define OPEN_THREAD_WATCHDOG                1
-#define OPEN_THREAD_CLIENT_ACCESS           0
+#define OPEN_THREAD_CLIENT_ACCESS           1
 #define OPEN_THREAD_CLIENT_TIMEOUT_CHECK    1
 #define OPEN_THREAD_WDCTL                   1
 #define OPEN_THREAD_PING                    0

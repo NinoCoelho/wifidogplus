@@ -182,7 +182,6 @@ http_callback_404(httpd *webserver, request *r)
             }
 
 #ifdef HUOBAN_APP03
-            (void)client_record_queue_enqueue(mac, current_time);
             char dev[MAC_ADDR_LEN] = {0};
             memset(tourl, 0, sizeof(tourl) / sizeof(tourl[0]));
             format_mac(dev, mac, ":");
