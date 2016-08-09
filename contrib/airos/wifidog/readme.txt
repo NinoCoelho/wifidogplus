@@ -21,7 +21,7 @@ tar xvjf SDK.UBNT.v5.2.tar.bz2
 cd SDK.UBNT.v5.2
 
 cd openwrt/package
-ln -s ~/dev/wifidog/airos/wifidog/ 
+ln -s ~/dev/wifidog/airos/wifidog/
 cd ../dl
 ln -s ~/dev/wifidog/wifidog-20090925.tar.gz
 

@@ -390,10 +390,10 @@ static void cmm_watchdog(void)
     }
     if (current_time - last_refresh_time >= REFRESH_TIME) {
         (void)fw_backup_refresh();
-#ifdef HUOBAN_APP03
-        (void)client_record_refresh();
-        (void)click_record_refresh();
-#endif
+        if (config_get_config()->wd_auth_mode == AUTH_LOCAL_APPCTL) {
+            (void)client_record_refresh();
+            (void)click_record_refresh();
+        }
         last_refresh_time = current_time;
     }
 }

@@ -253,9 +253,9 @@ fw_init(void)
         (void)fw_backup_from_file();
 	 }
 
-#if QOS_ENABLE
-     execute_cmd("qos-init.sh", NULL);
-#endif
+    if (config_get_config()->qosEnable) {
+        execute_cmd("qos-init.sh", NULL);
+    }
 
 	 return result;
 #endif
@@ -490,9 +490,9 @@ fw_sync_with_authserver(void)
             careful_free(real_ip);
         }
 
-#if QOS_ENABLE
-        do_qos(pos->client.mac);
-#endif
+        if (config->qosEnable) {
+            do_qos(pos->client.mac);
+        }
 
 #if 0
         /* Ping the client, if he responds it'll keep activity on the link.
@@ -557,17 +557,17 @@ fw_sync_with_authserver(void)
             continue;
         }
         else { /* client_list_is_connect_really(pos->client.mac) */
-#if LOCAL_AUTH
-            if (pos->client.fw_state == CLIENT_ALLOWED) {
-                unsigned int remain = 0;
-                (void)client_list_get_remain_allow_time(pos->client.mac, &remain);
-                if (remain <= 0) {
-                    debug(LOG_INFO, "deny %s", pos->client.mac);
-                    (void)iptables_fw_deny_mac(pos->client.mac);
-                    continue;
+            if (IS_LOCAL_AUTH(config->wd_auth_mode)) {
+                if (pos->client.fw_state == CLIENT_ALLOWED) {
+                    unsigned int remain = 0;
+                    (void)client_list_get_remain_allow_time(pos->client.mac, &remain);
+                    if (remain <= 0) {
+                        debug(LOG_INFO, "deny %s", pos->client.mac);
+                        (void)iptables_fw_deny_mac(pos->client.mac);
+                        continue;
+                    }
                 }
             }
-#else
             /*
              * This handles any change in
              * the status this allows us
@@ -577,7 +577,7 @@ fw_sync_with_authserver(void)
              * Only run if we have an auth server
              * configured!
              */
-            if (config->auth_servers != NULL) {
+            else if (config->auth_servers != NULL) {
                 /* Update the counters on the remote server only if we have an auth server */
                 auth_server_request(&authresponse, REQUEST_TYPE_COUNTERS,
                     pos->client.ip, pos->client.mac, pos->client.token,
@@ -636,7 +636,6 @@ fw_sync_with_authserver(void)
                         break;
                 }
             }
-#endif /* LOCAL_AUTH */
         }
     }
 

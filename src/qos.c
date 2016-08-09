@@ -55,7 +55,7 @@ static unsigned int qos_get_available_seq(const char *mac)
             return i + 1;
         }
     }
-    
+
     return 0;
 }
 
@@ -78,7 +78,7 @@ static int qos_build_command(char *buf, const char *ip, int uplink_limit, int do
 static int qos_clear(const char *mac, const char *ip, int uplink_limit, int downlink_limit, unsigned int seq)
 {
     char cmd[MAX_BUF] = {0};
-    
+
     if (qos_build_command(cmd, ip, uplink_limit, downlink_limit, seq, 0)) {
         debug(LOG_ERR, "can not build qos command for %s", ip);
         return -1;
@@ -89,14 +89,14 @@ static int qos_clear(const char *mac, const char *ip, int uplink_limit, int down
     client_list_set_downlink_limit(mac, 0);
     client_list_clear_qos_seq(mac);
     qos_clear_seq(seq);
-    
+
     return 0;
 }
 
 static int qos_set(const char *mac, const char *ip, int uplink_limit, int downlink_limit, unsigned int seq)
 {
     char cmd[MAX_BUF] = {0};
-    
+
     if (qos_build_command(cmd, ip, uplink_limit, downlink_limit, seq, 1)) {
         debug(LOG_ERR, "can not build qos command for %s", ip);
         return -1;
@@ -107,7 +107,7 @@ static int qos_set(const char *mac, const char *ip, int uplink_limit, int downli
     client_list_set_downlink_limit(mac, downlink_limit);
     client_list_set_qos_seq(mac, seq);
     qos_set_seq(seq);
-    
+
     return 0;
 }
 
@@ -151,7 +151,7 @@ int do_qos(const char *mac)
 
     if (client.counters.uplink_limit != uplink || client.counters.downlink_limit != downlink) {
         if (client.counters.uplink_limit != 0 || client.counters.downlink_limit != 0) {
-            (void)qos_clear(mac, client.ip, client.counters.uplink_limit, 
+            (void)qos_clear(mac, client.ip, client.counters.uplink_limit,
                 client.counters.downlink_limit, client.counters.qos_seq);
         }
 

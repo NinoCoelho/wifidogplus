@@ -42,7 +42,6 @@
 #include "nvram.h"
 #endif
 
-#define HUOBAN_APP03
 
 #define IPTABELES_VESION    (1410)
 
@@ -51,7 +50,7 @@
 #define RET_SUCCESS         0
 
 #define fdebug(level, format, ...) fprintf(stdout, "%s:%s:%d: "format"\n", __FILE__, __FUNCTION__, __LINE__, ## __VA_ARGS__)
-#define _CHECK_CAREFUL_     1
+#define _CHECK_CAREFUL_                     1
 
 #define WIFIDOG_ON_OFF                      1 /* slecting 0 close most of wifidog feature */
 #define OPEN_THREAD_TEST                    (0)
@@ -60,7 +59,7 @@
 #define OPEN_THREAD_CLIENT_ACCESS           1
 #define OPEN_THREAD_CLIENT_TIMEOUT_CHECK    1
 #define OPEN_THREAD_WDCTL                   1
-#define OPEN_THREAD_PING                    0
+#define OPEN_THREAD_PING                    1
 #define OPEN_THREAD_WHITE_LIST              0
 #define OPEN_THREAD_EXG_PROTOCOL            0
 #define OPEN_THREAD_GETADDRESS              (0)
@@ -69,9 +68,6 @@
 #define OPEN_CHECK_NETWORK                  0
 #endif
 
-#define QOS_ENABLE                          0
-
-#define LOCAL_AUTH                          1
 #define SUCCESS_TO_RECENT_URL               0
 
 /* allow first, have a better experience; deny first, save more traffic */
@@ -118,8 +114,11 @@ typedef enum {
     AUTH_LOCAL_ONEKEY_AUTO = 0,
     AUTH_LOCAL_ONEKEY_MANUAL,
     AUTH_LOCAL_WECHAT,
-    AUTH_SERVER_XIECHENG,
+    AUTH_LOCAL_APPCTL,
+    AUTH_SERVER_XIECHENG = 11,
 } Auth_mode_e;
+
+#define IS_LOCAL_AUTH(mode) ((mode) < AUTH_SERVER_XIECHENG && (mode) > AUTH_LOCAL_ONEKEY_AUTO)
 
 typedef struct system_info_s {
     char *version;

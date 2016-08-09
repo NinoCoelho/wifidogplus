@@ -69,7 +69,7 @@ http_callback_404(httpd *webserver, request *r)
 	t_auth_serv	*auth_server = get_auth_server();
     client_t     client;
     time_t       current_time;
-    char tourl[MAX_RECORD_URL_LEN] = {0};
+	char *urlFragment = NULL;
 
 	/*
 	 * XXX Note the code below assumes that the client's request is a plain
@@ -84,150 +84,119 @@ http_callback_404(httpd *webserver, request *r)
 	url = httpdUrlEncode(tmp_url);
     debug(LOG_INFO, "url %s", url);
 
-#if !(LOCAL_AUTH)
-	if (!is_online()) {
-		/* The internet connection is down at the moment  - apologize and do not redirect anywhere */
-		char * buf = NULL;
-        safe_asprintf(&buf,
-			"<p>稍等片刻请 <a href='%s'>点击这里</a> 重新连接。</p>", tmp_url);
-        send_http_page(r, "无法访问互联网", buf);
-		careful_free(buf);
-		debug(LOG_INFO, "Sent %s an apology since I am not online - no point sending them to auth server", r->clientAddr);
-	}
-	else if (!is_auth_online()) {
-		/* The auth server is down at the moment - apologize and do not redirect anywhere */
-		char * buf = NULL;
-        safe_asprintf(&buf,
-			"<p>稍等片刻请 <a href='%s'>点击这里</a> 重新连接。</p>", tmp_url);
-        send_http_page(r, "无法进入认证界面", buf);
-		careful_free(buf);
-		debug(LOG_INFO, "Sent %s an apology since auth server not online - no point sending them to auth server", r->clientAddr);
-	}
-	else
-#endif
-    {
-		/* Re-direct them to auth server */
-		char *urlFragment;
+    if (!IS_LOCAL_AUTH(config->wd_auth_mode)) {
+    	if (!is_online()) {
+    		/* The internet connection is down at the moment  - apologize and do not redirect anywhere */
+    		char * buf = NULL;
+            safe_asprintf(&buf,
+    			"<p>稍等片刻请 <a href='%s'>点击这里</a> 重新连接。</p>", tmp_url);
+            send_http_page(r, "无法访问互联网", buf);
+    		careful_free(buf);
+    		debug(LOG_INFO, "Sent %s an apology since I am not online - no point sending them to auth server", r->clientAddr);
+            goto RET;
+    	} else if (!is_auth_online()) {
+    		/* The auth server is down at the moment - apologize and do not redirect anywhere */
+    		char * buf = NULL;
+            safe_asprintf(&buf,
+    			"<p>稍等片刻请 <a href='%s'>点击这里</a> 重新连接。</p>", tmp_url);
+            send_http_page(r, "无法进入认证界面", buf);
+    		careful_free(buf);
+    		debug(LOG_INFO, "Sent %s an apology since auth server not online - no point sending them to auth server", r->clientAddr);
+            goto RET;
+    	}
+    }
 
-        mac = arp_get(r->clientAddr);
-		if (!is_mac_valid(mac)) {
-			/* We could not get their MAC address */
-			debug(LOG_INFO, "Failed to retrieve MAC address for ip %s, so not putting in the login request", r->clientAddr);
-			safe_asprintf(&urlFragment, "%sgw_address=%s&gw_port=%d&gw_id=%s&ip=%s&url=%s",
-				auth_server->authserv_login_script_path_fragment,
-				config->gw_address,
-				config->gw_port,
-				config->gw_id,
-				r->clientAddr,
-				url);
-		}
-        else {
-		    current_time = time(NULL);
-            memset((void *)&client, 0, sizeof(client_t));
-            if (!client_list_get_client(mac, &client)) {
-                if (memcmp(client.ip, r->clientAddr, strlen(r->clientAddr) + 1)) {
-                    (void)client_list_set_ip(mac, r->clientAddr);
-                }
+    mac = arp_get(r->clientAddr);
+	if (!is_mac_valid(mac)) {
+		/* We could not get their MAC address */
+		debug(LOG_WARNING, "Failed to retrieve MAC address for ip %s", r->clientAddr);
+		send_http_page(r, "WiFiDog Error", "Failed to retrieve your MAC address");
+	} else {
+	    current_time = time(NULL);
+        memset((void *)&client, 0, sizeof(client_t));
+        if (!client_list_get_client(mac, &client)) {
+            if (memcmp(client.ip, r->clientAddr, strlen(r->clientAddr) + 1)) {
+                (void)client_list_set_ip(mac, r->clientAddr);
+            }
 
-                if (client.auth > CLIENT_CHAOS) {
-                    (void)iptables_fw_allow_mac(mac);
-                    (void)iptables_fw_tracked_mac(mac);
-                    (void)client_list_set_last_updated(mac, current_time);
+            if (client.auth > CLIENT_CHAOS) {
+                (void)iptables_fw_allow_mac(mac);
+                (void)iptables_fw_tracked_mac(mac);
+                (void)client_list_set_last_updated(mac, current_time);
+                goto RET;
+            }
+
+#if ANTI_DOS
+            if (current_time - client.counters.last_updated < ANTI_DOS_TIME) {
+                unsigned int dos_count = 0;
+                (void)client_list_increase_dos_count(mac);
+                (void)client_list_get_dos_count(mac, &dos_count);
+                if (dos_count > ANTI_DOS_LIMIT) {
+                    debug(LOG_INFO, "[%s] Anti DoS, ignore this request", mac);
                     careful_free(mac);
                     careful_free(url);
                     return;
                 }
-
-#if ANTI_DOS
-                if (current_time - client.counters.last_updated < ANTI_DOS_TIME) {
-                    unsigned int dos_count = 0;
-                    (void)client_list_increase_dos_count(mac);
-                    (void)client_list_get_dos_count(mac, &dos_count);
-                    if (dos_count > ANTI_DOS_LIMIT) {
-                        debug(LOG_INFO, "[%s] Anti DoS, ignore this request", mac);
-                        careful_free(mac);
-                        careful_free(url);
-                        return;
-                    }
-                } else {
-                    (void)client_list_clear_dos_count(mac);
-                    (void)client_list_set_last_updated(mac, current_time);
-                }
-#endif
             } else {
-                (void)client_list_add(mac);
-                (void)client_list_set_ip(mac, r->clientAddr);
+                (void)client_list_clear_dos_count(mac);
+                (void)client_list_set_last_updated(mac, current_time);
             }
+#endif
+        } else {
+            (void)client_list_add(mac);
+            (void)client_list_set_ip(mac, r->clientAddr);
+        }
 
-            (void)iptables_fw_tracked_mac(mac);
-            (void)client_list_set_last_updated(mac, current_time);
-            (void)client_list_set_recent_req(mac, tmp_url);
+        (void)iptables_fw_tracked_mac(mac);
+        (void)client_list_set_last_updated(mac, current_time);
+        (void)client_list_set_recent_req(mac, tmp_url);
 
-            char dev_name[MAX_HOST_NAME_LEN] = DUMY_HOST_NAME;
-            (void)client_list_get_hostname(mac, dev_name);
-            if (!strncasecmp(dev_name, DUMY_HOST_NAME, strlen(DUMY_HOST_NAME) + 1)) {
+        char dev_name[MAX_HOST_NAME_LEN] = DUMY_HOST_NAME;
+        (void)client_list_get_hostname(mac, dev_name);
+        if (!strncasecmp(dev_name, DUMY_HOST_NAME, strlen(DUMY_HOST_NAME) + 1)) {
 #ifdef __OPENWRT__
-                if(getInterface_cmd(dev_name, "cat /tmp/dhcp.leases | grep %s | awk '{print $4}'", mac)){
-                   debug(LOG_ERR, "%s:device name  For failure !!!",__func__);
-                }
+            if(getInterface_cmd(dev_name, "cat /tmp/dhcp.leases | grep %s | awk '{print $4}'", mac)){
+               debug(LOG_ERR, "%s:device name  For failure !!!",__func__);
+            }
 #endif
 #ifdef __MTK_SDK__
-                memset(dev_name, 0, MAX_HOST_NAME_LEN);
-                if (0 != get_hostname(mac, dev_name)) {
-                    memcpy(dev_name, DUMY_HOST_NAME, strlen(DUMY_HOST_NAME) + 1);
-                }
-#endif
-                debug(LOG_DEBUG, "device name is [%s]",dev_name);
-                (void)client_list_set_hostname(mac, dev_name);
+            memset(dev_name, 0, MAX_HOST_NAME_LEN);
+            if (0 != get_hostname(mac, dev_name)) {
+                memcpy(dev_name, DUMY_HOST_NAME, strlen(DUMY_HOST_NAME) + 1);
             }
+#endif
+            debug(LOG_DEBUG, "device name is [%s]",dev_name);
+            (void)client_list_set_hostname(mac, dev_name);
+        }
 
-#ifdef HUOBAN_APP03
+        if (config->wd_auth_mode == AUTH_LOCAL_APPCTL) {
             char dev[MAC_ADDR_LEN] = {0};
-            memset(tourl, 0, sizeof(tourl) / sizeof(tourl[0]));
+            char tourl[MAX_RECORD_URL_LEN] = {0};
             format_mac(dev, mac, ":");
             sprintf(tourl, "%smac=%s&dev=%s&tm=%u", config->wd_to_url, config->gw_id, dev, current_time);
             debug(LOG_INFO, "redirect to %s", tourl);
             http_send_redirect(r, tourl, NULL);
-            careful_free(mac);
-            careful_free(url);
-            return;
-#endif
-
-			char *gw_mac;
-	        if ((gw_mac = get_gw_mac(config->gw_interface)) == NULL) {
-			    debug(LOG_ERR, "Could not get MAC address information of %s, exiting...", config->gw_interface);
-                careful_free(mac);
-                careful_free(url);
-		    }
-
-			safe_asprintf(&urlFragment, "%sgw_address=%s&gw_mac=%s&gw_port=%d&gw_id=%s&dev_name=%s&mac=%s&ip=%s&url=%s",
-				auth_server->authserv_login_script_path_fragment,
-				config->gw_address,
-				gw_mac,
-				config->gw_port,
-				config->gw_id,
-				dev_name,
-				mac,
-				r->clientAddr,
-				url);
-		}
-
-#if LOCAL_AUTH
-        debug(LOG_INFO, "Captured %s requesting [%s] and re-directing them to local page", r->clientAddr, url);
-        if (config->wd_auth_mode == AUTH_LOCAL_WECHAT) {
-            //send_wechat_check_http_page(r);
+        } else if (config->wd_auth_mode == AUTH_LOCAL_WECHAT) {
+            debug(LOG_INFO, "Captured %s requesting [%s] and re-directing them to local page", r->clientAddr, url);
             send_wechat_redirect_http_page(r);
         } else if (config->wd_auth_mode == AUTH_LOCAL_ONEKEY_AUTO || config->wd_auth_mode == AUTH_LOCAL_ONEKEY_MANUAL) {
+            debug(LOG_INFO, "Captured %s requesting [%s] and re-directing them to local page", r->clientAddr, url);
             send_onekey_redirect_http_page(r);
+        } else if (config->wd_auth_mode == AUTH_SERVER_XIECHENG) {
+    		char *gw_mac = get_gw_mac(config->gw_interface);
+    		safe_asprintf(&urlFragment, "%sgw_address=%s&gw_mac=%s&gw_port=%d&gw_id=%s&dev_name=%s&mac=%s&ip=%s&url=%s",
+    			auth_server->authserv_login_script_path_fragment,
+    			config->gw_address, gw_mac, config->gw_port, config->gw_id,
+    			dev_name, mac, r->clientAddr, url);
+    		debug(LOG_INFO, "Captured %s requesting [%s] and re-directing them to login page", r->clientAddr, url);
+    		http_send_redirect_to_auth(r, urlFragment, "Redirect to login page");
+            careful_free(gw_mac);
         }
-#else
-		debug(LOG_INFO, "Captured %s requesting [%s] and re-directing them to login page", r->clientAddr, url);
-		http_send_redirect_to_auth(r, urlFragment, "Redirect to login page");
-#endif
-
-		careful_free(urlFragment);
-        careful_free(mac);
 	}
+
+RET:
+    careful_free(urlFragment);
+    careful_free(mac);
 	careful_free(url);
 }
 
@@ -695,15 +664,6 @@ http_callback_onekey_auth(httpd *webserver, request *r)
             (void)client_list_set_auth(mac, CLIENT_VIP);
 
             memcpy(tourl, config->wd_to_url, strlen(config->wd_to_url));
-
-#ifdef HUOBAN_APP03
-            char dev[MAC_ADDR_LEN] = {0};
-            memset(tourl, 0, sizeof(tourl) / sizeof(tourl[0]));
-            format_mac(dev, mac, ":");
-            sprintf(tourl, "%smac=%s&dev=%s", config->wd_to_url, config->gw_id, dev);
-            (void)client_list_set_auth(mac, CLIENT_CHAOS);
-#endif
-
             debug(LOG_INFO, "redirect to %s", tourl);
             if (config->wd_skip_SuccessPage) {
                 http_send_redirect(r, tourl, NULL);
@@ -1267,22 +1227,13 @@ void send_onekey_success_http_page(request *r, const char *mac)
     buffer[written]=0;
 
     memcpy(tourl, config->wd_to_url, strlen(config->wd_to_url));
-
 #if SUCCESS_TO_RECENT_URL
     memset(tourl, 0, sizeof(tourl) / sizeof(tourl[0]));
     if (client_list_get_recent_req(mac, tourl) != RET_SUCCESS) {
         memcpy(tourl, DUMY_REQ_URL, strlen(DUMY_REQ_URL) + 1);
     }
 #endif
-
-#ifdef HUOBAN_APP03
-    char dev[MAC_ADDR_LEN] = {0};
-    memset(tourl, 0, sizeof(tourl) / sizeof(tourl[0]));
-    format_mac(dev, mac, ":");
-    sprintf(tourl, "%smac=%s&dev=%s", config->wd_to_url, config->gw_id, dev);
-#endif
     debug(LOG_INFO, "redirect to %s", tourl);
-
     if (tourl && strlen(tourl)) {
         httpdAddVariable(r, "recent_req", tourl);
     }

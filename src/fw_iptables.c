@@ -420,12 +420,12 @@ iptables_fw_init(void)
 	iptables_do_command("-t mangle -I PREROUTING 1 -i %s -j " TABLE_WIFIDOG_TRUSTED, config->gw_interface);//this rule will be inserted before the prior one
 	iptables_do_command("-t mangle -I POSTROUTING 1 -o %s -j " TABLE_WIFIDOG_INCOMING, config->gw_interface);
 
-#if QOS_ENABLE
+    if (config->qosEnable) {
         iptables_do_command("-t mangle -N " TABLE_WIFIDOG_QOS_IN);
         iptables_do_command("-t mangle -N " TABLE_WIFIDOG_QOS_OUT);
         iptables_do_command("-t mangle -I PREROUTING 1 -i %s -j " TABLE_WIFIDOG_QOS_OUT, config->gw_interface);
         iptables_do_command("-t mangle -I POSTROUTING 1 -o %s -j " TABLE_WIFIDOG_QOS_IN, config->gw_interface);
-#endif
+    }
 
 	for (p = config->trustedmaclist; p != NULL; p = p->next) {
 	    (void)client_list_add(p->mac);
@@ -619,14 +619,14 @@ iptables_fw_destroy(void)
 	iptables_do_command("-t filter -X " TABLE_WIFIDOG_KNOWN);
 	iptables_do_command("-t filter -X " TABLE_WIFIDOG_UNKNOWN);
 
-#if QOS_ENABLE
-    iptables_fw_destroy_mention("mangle", "POSTROUTING", TABLE_WIFIDOG_QOS_IN);
-    iptables_fw_destroy_mention("mangle", "PREROUTING", TABLE_WIFIDOG_QOS_OUT);
-    iptables_do_command("-t mangle -F " TABLE_WIFIDOG_QOS_IN);
-    iptables_do_command("-t mangle -F " TABLE_WIFIDOG_QOS_OUT);
-    iptables_do_command("-t mangle -X " TABLE_WIFIDOG_QOS_IN);
-    iptables_do_command("-t mangle -X " TABLE_WIFIDOG_QOS_OUT);
-#endif
+    if (config_get_config()->qosEnable) {
+        iptables_fw_destroy_mention("mangle", "POSTROUTING", TABLE_WIFIDOG_QOS_IN);
+        iptables_fw_destroy_mention("mangle", "PREROUTING", TABLE_WIFIDOG_QOS_OUT);
+        iptables_do_command("-t mangle -F " TABLE_WIFIDOG_QOS_IN);
+        iptables_do_command("-t mangle -F " TABLE_WIFIDOG_QOS_OUT);
+        iptables_do_command("-t mangle -X " TABLE_WIFIDOG_QOS_IN);
+        iptables_do_command("-t mangle -X " TABLE_WIFIDOG_QOS_OUT);
+    }
 
 	return 1;
 }

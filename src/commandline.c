@@ -122,7 +122,7 @@ void parse_commandline(int argc, char **argv) {
 					config->debuglevel = atoi(optarg);
 				}
 				break;
-                
+
             case 'p':
                 config->log_print = 1;
                 break;
@@ -130,7 +130,7 @@ void parse_commandline(int argc, char **argv) {
 			case 's':
 				config->log_syslog = 1;
 				break;
-                
+
             case 'l':
                 config->log_location= 1;
                 break;

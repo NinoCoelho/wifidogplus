@@ -7,20 +7,20 @@ config_load()
 {
     rm -f /etc/wifidog.conf
     rm -f /etc/wifidog-msg.html
-    
+
     ln -s /etc_ro/wifidog-msg.html /etc/wifidog-msg.html
 
     gateway_id=$(cat /sys/devices/virtual/net/eth2/address|tr a-z A-Z|sed -e 's#:##g')
     nvram_set 2860 wd_gateway_id $gateway_id
     #gateway_id=$(nvram_get 2860 wd_gateway_id)
-    
-    gateway_interface=$(nvram_get 2860 wd_gateway_interface) 
+
+    gateway_interface=$(nvram_get 2860 wd_gateway_interface)
     gateway_eninterface=$(nvram_get 2860 wd_gateway_eninterface)
-    gateway_hostname=$(nvram_get 2860 wd_gateway_hostname) 
-    gateway_httpport=$(nvram_get 2860 wd_gateway_httpport) 
-    gateway_path=$(nvram_get 2860 wd_gateway_path) 
-    gateway_connmax=$(nvram_get 2860 wd_gateway_connmax) 
-    ssl_enable=$(nvram_get 2860 wd_ssl_enable) 
+    gateway_hostname=$(nvram_get 2860 wd_gateway_hostname)
+    gateway_httpport=$(nvram_get 2860 wd_gateway_httpport)
+    gateway_path=$(nvram_get 2860 wd_gateway_path)
+    gateway_connmax=$(nvram_get 2860 wd_gateway_connmax)
+    ssl_enable=$(nvram_get 2860 wd_ssl_enable)
     check_interval=$(nvram_get 2860 wd_check_interval)
     client_timeout=$(nvram_get 2860 wd_client_timeout)
     sslport=$(nvram_get 2860 wd_sslport)
@@ -144,7 +144,7 @@ white_url_init() {
 		iptables -t nat -A WiFiDog_br0_WhiteUrl  -d $x -j ACCEPT
 	done
 }
-  
+
 start() {
 	config_load
 	/usr/bin/wifidog-init start
@@ -166,8 +166,8 @@ restart() {
         /usr/bin/wifidog-init start
 		white_url_init
 }
- 
-reload() {                        
+
+reload() {
         /usr/bin/wifidog-init stop
         sleep 4
         config_load

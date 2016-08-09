@@ -298,10 +298,10 @@ termination_handler(int s)
 	}
 
     (void)fw_backup_refresh();
-#ifdef HUOBAN_APP03
-    (void)client_record_refresh();
-    (void)click_record_refresh();
-#endif
+    if (config_get_config()->wd_auth_mode == AUTH_LOCAL_APPCTL) {
+        (void)client_record_refresh();
+        (void)click_record_refresh();
+    }
 
 	debug(LOG_INFO, "Flushing firewall rules...");
     pthread_mutex_lock(&fw_init_mutex);
@@ -542,10 +542,10 @@ main_loop(void)
     pthread_mutex_unlock(&fw_init_mutex);
 #endif
 
-#ifdef HUOBAN_APP03
-    (void)client_record_restore_from_file();
-    (void)click_record_restore_from_file();
-#endif
+    if (config->wd_auth_mode == AUTH_LOCAL_APPCTL) {
+        (void)client_record_restore_from_file();
+        (void)click_record_restore_from_file();
+    }
 
 #if OPEN_THREAD_WATCHDOG
     result = pthread_create(&tid_watchdog_thread, NULL, (void*)thread_watchdog, NULL);
@@ -621,13 +621,15 @@ main_loop(void)
 
 #if OPEN_THREAD_PING
 	/* Start heartbeat thread */
-    pthread_watchdog_register(THREAD_PING_NAME);
-	result = pthread_create(&tid_ping, NULL, (void *)thread_ping, NULL);
-	if (result != 0) {
-	    debug(LOG_ERR, "FATAL: Failed to create a new thread (ping) - exiting");
-		termination_handler(0);
-	}
-	pthread_detach(tid_ping);
+    if (!IS_LOCAL_AUTH(config_get_config()->wd_auth_mode)) {
+        pthread_watchdog_register(THREAD_PING_NAME);
+    	result = pthread_create(&tid_ping, NULL, (void *)thread_ping, NULL);
+    	if (result != 0) {
+    	    debug(LOG_ERR, "FATAL: Failed to create a new thread (ping) - exiting");
+    		termination_handler(0);
+    	}
+    	pthread_detach(tid_ping);
+    }
 #endif
 
 #if OPEN_THREAD_WHITE_LIST
