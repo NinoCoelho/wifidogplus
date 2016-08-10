@@ -71,24 +71,6 @@ int thread_client_access_preproccess(char *arg)
 
         memset((void *)&client, 0, sizeof(client_t));
         if (RET_SUCCESS == client_list_get_client(mac, &client)) {
-            if (config->wd_reAssoc_reAuth) {
-                if (client.auth < CLIENT_CONFIG) {
-                    (void)iptables_fw_deny_mac(mac);
-                    (void)client_list_set_auth(mac, CLIENT_CHAOS);
-                }
-                (void)client_list_set_last_updated(mac, current_time);
-            }
-
-            if (client.auth > CLIENT_CHAOS) {
-                debug(LOG_DEBUG, "mac %s had authenticated", mac);
-                (void)iptables_fw_allow_mac(mac);
-                if (client.auth < CLIENT_CONFIG) {
-                    (void)iptables_fw_tracked_mac(mac);
-                }
-                (void)client_list_set_last_updated(mac, current_time);
-                continue;
-            }
-
 #if ANTI_DOS
             if (current_time - client.counters.last_updated < ANTI_DOS_TIME) {
                 unsigned int dos_count = 0;
@@ -113,6 +95,13 @@ int thread_client_access_preproccess(char *arg)
                 (void)client_list_set_auth(mac, CLIENT_CHAOS);
             }
             (void)client_list_set_last_updated(mac, current_time);
+        } else if (client.auth > CLIENT_CHAOS) {
+            debug(LOG_DEBUG, "mac %s had authenticated", mac);
+            (void)iptables_fw_allow_mac(mac);
+            if (client.auth < CLIENT_CONFIG) {
+                (void)iptables_fw_tracked_mac(mac);
+            }
+            (void)client_list_set_last_updated(mac, current_time);
         }
 
         if (config->wd_auth_mode == AUTH_LOCAL_APPCTL) {
@@ -123,7 +112,7 @@ int thread_client_access_preproccess(char *arg)
                 debug(LOG_DEBUG, "fail to enqueue mac %s to client record queue", mac);
             }
             continue;
-        } else if (config->wd_auth_mode == AUTH_SERVER_XIECHENG) {
+        } else if (config->wd_auth_mode == AUTH_SERVER_XIECHENG && client.auth <= CLIENT_CHAOS) {
             ret = client_access_queue_enqueue(mac);
             if (ret == 1) {
                 debug(LOG_DEBUG, "mac %s had existed in client access queue", mac);
