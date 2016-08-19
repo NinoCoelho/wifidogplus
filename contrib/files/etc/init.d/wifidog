@@ -25,7 +25,7 @@ config_load()
 {
     rm -f /etc/wifidog.conf
 
-    gateway_id=$(cat /sys/devices/virtual/net/eth0.1/address|tr a-z A-Z|sed -e 's#:##g')
+    gateway_id=$(cat /sys/devices/virtual/net/eth0/address|tr a-z A-Z|sed -e 's#:##g')
     uci set wifidog.@wifidog[0].gateway_id=$gateway_id
     #gateway_id=$(uci get wifidog.@wifidog[0].gateway_id)
 
