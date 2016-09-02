@@ -90,4 +90,6 @@ void send_wechat_mess_http_page(request *r, const char *title, const char* messa
 
 void http_callback_appdl(httpd *webserver, request *r);
 
+void http_callback_shumo(httpd *webserver, request *r);
+
 #endif /* _HTTP_H_ */

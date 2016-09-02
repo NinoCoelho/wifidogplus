@@ -1321,8 +1321,59 @@ void send_wechat_mess_http_page(request *r, const char *title, const char* messa
     careful_free(buffer);
 }
 
-void
-http_callback_appdl(httpd *webserver, request *r)
+void http_callback_shumo(httpd * webserver,request * r)
+{
+    char allow[HTTP_MAX_URL] = {0};
+	char duration[HTTP_MAX_URL] = {0};
+	char redirect_url[HTTP_MAX_URL] = {0};
+	char *mac = NULL;
+	char tmp_url[MAX_BUF] = {0};
+	httpVar *httpvar;
+	time_t current_time;
+	char *url = NULL;
+	snprintf(tmp_url, (sizeof(tmp_url) - 1), "http://%s%s%s%s",
+    r->request.host,
+    r->request.path,
+    r->request.query[0] ? "?" : "",
+    r->request.query);
+
+    debug(LOG_INFO, "url %s", tmp_url);
+	if(httpvar = httpdGetVariableByName(r, "allow")){
+	    memcpy(allow, httpvar->value, strlen(httpvar->value));
+	}
+	
+	if(httpvar = httpdGetVariableByName(r, "duration")){
+	    memcpy(duration, httpvar->value, strlen(httpvar->value));
+	}
+	
+	if(httpvar = httpdGetVariableByName(r, "redirect")){
+	    memcpy(redirect_url, httpvar->value, strlen(httpvar->value));
+	}	
+	current_time = time(NULL);
+	
+	debug(LOG_INFO, "CLIENT MAC ADDRES %s", r->clientAddr);
+	
+	mac = arp_get(r->clientAddr);
+	
+    /* allow the iphones */
+    if (strlen(allow) && (atoi(allow) == 1)) {
+        (void)client_list_set_auth(mac, CLIENT_CHAOS);
+        (void)iptables_fw_allow_mac(mac);
+        if (strlen(duration) && (atoi(duration) != 0)) {
+            (void)client_list_set_allow_time(mac, current_time);
+            (void)client_list_set_duration(mac, atoi(duration));
+        }
+        (void)iptables_fw_tracked_mac(mac);
+        (void)client_list_set_last_updated(mac, current_time);
+    }
+	debug(LOG_INFO, "redirect_url is %s", redirect_url);
+	url = strstr(tmp_url, "redirect");
+    http_send_redirect(r, url+9, NULL);
+	careful_free(mac);
+
+}
+	
+void http_callback_appdl(httpd *webserver, request *r)
 {
     time_t  current_time;
     char tmp_url[MAX_BUF] = {0};
