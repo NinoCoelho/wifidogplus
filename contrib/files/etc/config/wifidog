@@ -1,8 +1,8 @@
 config wifidog 'wifidog'
-	option gateway_id '24660045'
-	option gateway_hostname ''
+	option gateway_id '78a35118e30a'
+	option gateway_hostname 'auth.jarxi.com'
 	option gateway_httpport '80'
-	option gateway_path '/AuthenServer/interface/'
+	option gateway_path '/'
 	option gateway_connmax '25'
 	option wifidog_enable '1'
 	option qos_enable '0'
@@ -22,7 +22,7 @@ config wifidog 'wifidog'
 	option appservport '80'
 	option appservpath '/appServer/interface/'
 	option auto_wireless_pw 0
-	option auth_mode 3
+	option auth_mode 11
 	option wechat_officialAccount '深圳市加希科技有限公司'
 	option wechat_shopId '5359769'
 	option wechat_appId 'wxa57d404efdd6df30'
@@ -34,9 +34,9 @@ config wifidog 'wifidog'
 	option downlink_vip 192
 	option uplink_common 64
 	option downlink_common 128
-	option to_url 'http://wifi.99zjb.com/index.html?'
+	option to_url 'https://wifi.99zjb.com/index.html?'
 	option skip_SuccessPage 1
-	option reAssoc_reAuth 1
-	option proxyport 3128
+	option reAssoc_reAuth 0
+	option proxyport 0
 	option separate_wired 1
 
