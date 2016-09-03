@@ -1375,12 +1375,12 @@ int format_mac(_OUT char *arr, _IN const char *mac, const char *del)
 #endif
 
     memcpy(str, mac, strlen(mac));
-    printf("str %s, del %s", str, del);
+    //printf("str %s, del %s", str, del);
 
     s=strtok(str,del);
     while(s != NULL)
     {
-        printf("%s", s);
+        //printf("%s", s);
         if (!isxdigit(s[0]))
         {
             printf("mac illegal");
@@ -1390,7 +1390,7 @@ int format_mac(_OUT char *arr, _IN const char *mac, const char *del)
         {
 #if 1
             temp[0] = s[0];
-            printf("temp %c", temp[0]);
+            //printf("temp %c", temp[0]);
             s[0] = '0';
             s[1] = temp[0];
 #else
