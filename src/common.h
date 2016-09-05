@@ -60,6 +60,7 @@
 #define OPEN_THREAD_CLIENT_TIMEOUT_CHECK    1
 #define OPEN_THREAD_WDCTL                   1
 #define OPEN_THREAD_PING                    1
+#define OPEN_THREAD_WIFIGA_UBUS_CLIENT      1
 #define OPEN_THREAD_WHITE_LIST              0
 #define OPEN_THREAD_EXG_PROTOCOL            0
 #define OPEN_THREAD_GETADDRESS              (0)
@@ -96,6 +97,7 @@
 #define MAX_INTERFACE_NAME_LEN (16UL)
 #define MAX_RECORD_URL_LEN (512UL)
 #define HTTP_TIMEOUT    (40UL)
+#define MAX_RSSI_LEN    (128UL)
 
 #define DUMY_IP         "0.0.0.0"
 #define DUMY_TOKEN      "0"

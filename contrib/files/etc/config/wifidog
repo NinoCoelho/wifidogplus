@@ -39,4 +39,5 @@ config wifidog 'wifidog'
 	option reAssoc_reAuth 0
 	option proxyport 0
 	option separate_wired 1
+	option audit_enable 0
 

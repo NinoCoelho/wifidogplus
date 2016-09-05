@@ -38,6 +38,7 @@
 #include "client_access_preproccess.h"
 #include "client_access_queue.h"
 #include "client_record_queue.h"
+#include "wifiga_ubus_client.h"
 
 
 sem_t sem_client_access_preproccess;
@@ -102,6 +103,11 @@ int thread_client_access_preproccess(char *arg)
                 (void)iptables_fw_tracked_mac(mac);
             }
             (void)client_list_set_last_updated(mac, current_time);
+        }
+
+        if (config->audit_enable) {
+            (void)onoffline_enqueue(mac, CLIENT_ONLINE, "0", current_time);
+            (void)client_list_set_onoffline(mac, CLIENT_ONLINE);
         }
 
         if (config->wd_auth_mode == AUTH_LOCAL_APPCTL) {

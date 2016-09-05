@@ -96,6 +96,8 @@ AC_HAVE_LIBRARY(nsl)
 AC_HAVE_LIBRARY(uci)
 AC_HAVE_LIBRARY(rt)
 AC_HAVE_LIBRARY(curl)
+AC_HAVE_LIBRARY(ubus)
+AC_HAVE_LIBRARY(ubox)
 echo "libhttpd dependencies check complete"
 
 AC_OUTPUT( 		Makefile 

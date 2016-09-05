@@ -69,6 +69,7 @@
 #include "watchdog.h"
 #include "fw_backup.h"
 #include "client_record_backup.h"
+#include "wifiga_ubus_client.h"
 
 
 int fw_init_flag = 0;
@@ -82,6 +83,7 @@ pthread_mutex_t fw_init_mutex = PTHREAD_MUTEX_INITIALIZER;
  */
 static pthread_t tid_fw_counter = 0;
 static pthread_t tid_ping = 0;
+static pthread_t tid_wifiga_ubus_client = 0;
 static pthread_t tid_exg_protocol =0;  // add by matt_2015_3_27
 static pthread_t tid_white_list =0;//add jore
 static pthread_t tid_getaddress =0; /* cjpthree@126.com 2015.5.7 */
@@ -324,6 +326,14 @@ termination_handler(int s)
 	if (tid_ping  && self != tid_ping) {
 		debug(LOG_INFO, "Explicitly killing the ping thread");
 		pthread_kill(tid_ping, SIGKILL);
+	}
+#endif
+
+#if OPEN_THREAD_WIFIGA_UBUS_CLIENT
+    if (tid_wifiga_ubus_client && self != tid_wifiga_ubus_client) {
+		debug(LOG_INFO, "Explicitly killing the wifiga_ubus_client thread");
+        wifiga_ubus_client_exit();
+		pthread_kill(tid_wifiga_ubus_client, SIGKILL);
 	}
 #endif
 
@@ -652,6 +662,15 @@ main_loop(void)
 		termination_handler(0);
 	}
     pthread_detach(tid_exg_protocol);
+#endif
+
+#if OPEN_THREAD_WIFIGA_UBUS_CLIENT
+    result = pthread_create(&tid_wifiga_ubus_client, NULL, (void*)wifiga_ubus_client_main_loop, NULL);
+	if (result != 0) {
+		debug(LOG_ERR,"FATAL: Failed to create a new thread(wifiga_ubus_client) -exiting");
+		termination_handler(0);
+	}
+    pthread_detach(tid_wifiga_ubus_client);
 #endif
 
 #if OPEN_THREAD_TEST

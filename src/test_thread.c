@@ -45,6 +45,7 @@
 #include "fw_backup.h"
 #include "click_record_queue.h"
 #include "appctl.h"
+#include "wifiga_ubus_client.h"
 
 #ifdef debug
 #undef debug
@@ -355,6 +356,20 @@ void testcurl(void)
     careful_free(date);
 }
 
+
+void test_onoffline_enqueue()
+{
+    while (1) {
+        onoffline_enqueue("00:22:44:66:88:aa", 1, "3", time(NULL));
+        onoffline_enqueue("11:22:44:66:88:aa", 1, "3", time(NULL));
+        onoffline_enqueue("22:22:44:66:88:aa", 1, "3", time(NULL));
+        onoffline_enqueue("33:22:44:66:88:aa", 1, "3", time(NULL));
+        onoffline_enqueue("00:22:44:66:88:bb", 0, "3", time(NULL));
+        sleep(2);
+        onoffline_enqueue("11:22:44:66:88:bb", 0, "3", time(NULL));
+    }
+}
+
 void thread_test(char* arg)
 {
     int result;
@@ -417,8 +432,9 @@ void thread_test(char* arg)
     test_client_record();
     //test_click_record_queue();
     test_click_record_backup();
-#endif /*0 */
     appctl_test();
+#endif /*0 */
+    test_onoffline_enqueue();
 
 }
 

@@ -76,6 +76,7 @@
 #include "list.h"
 #include "watchdog.h"
 #include "qos.h"
+#include "wifiga_ubus_client.h"
 
 
 extern int fw_rebuild_flag;
@@ -543,6 +544,10 @@ fw_sync_with_authserver(void)
             /* Timing out user */
             (void)iptables_fw_deny_mac(pos->client.mac);
             (void)iptables_fw_untracked_mac(pos->client.mac);
+            if (config->audit_enable && pos->client.onoffline == CLIENT_ONLINE) {
+                (void)onoffline_enqueue(pos->client.mac, CLIENT_OFFLINE, "0", current_time);
+                (void)client_list_set_onoffline(pos->client.mac, CLIENT_OFFLINE);
+            }
 
             /* Advertise the logout if we have an auth server
             * cjpthree: change to did not advertise auth server, only do this thing local

@@ -2,7 +2,8 @@
 # $Id$
 #
 
-bin_PROGRAMS = wifidog \
+bin_PROGRAMS = \
+	wifidog \
 	wdctl
 
 AM_CPPFLAGS = \
@@ -41,7 +42,8 @@ wifidog_SOURCES = commandline.c \
 	client_record_backup.c \
 	click_record_backup.c \
 	qos.c \
-	appctl.c
+	appctl.c \
+	wifiga_ubus_client.c
 
 noinst_HEADERS = commandline.h \
 	common.h \
@@ -78,7 +80,10 @@ noinst_HEADERS = commandline.h \
 	client_record_backup.h \
 	click_record_backup.h \
 	qos.h \
-	appctl.h
+	appctl.h \
+	slist.h \
+	link_queue.h \
+	wifiga_ubus_client.h
 
 
 wdctl_SOURCES = wdctl.c

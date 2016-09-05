@@ -66,6 +66,7 @@ config_load()
     wd_skip_SuccessPage=$(uci get wifidog.@wifidog[0].skip_SuccessPage)
     wd_reAssoc_reAuth=$(uci get wifidog.@wifidog[0].reAssoc_reAuth)
     proxyport=$(uci get wifidog.@wifidog[0].proxyport)
+    audit_enable=$(uci get wifidog.@wifidog[0].audit_enable)
 
 echo "
 GatewayID $gateway_id
@@ -109,6 +110,7 @@ Wd_to_url $wd_to_url
 Wd_skip_SuccessPage $wd_skip_SuccessPage
 Wd_reAssoc_reAuth $wd_reAssoc_reAuth
 proxyport $proxyport
+audit_enable $audit_enable
 
 FirewallRuleSet global {
     FirewallRule allow to 168.95.1.1

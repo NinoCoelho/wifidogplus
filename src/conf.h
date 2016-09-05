@@ -220,9 +220,11 @@ typedef struct {
     char *wd_wechat_secretKey;
     char *wd_wechat_extend;
 
+    int audit_enable;
+
     t_firewall_ruleset	*rulesets;	/**< @brief firewall rules */
     t_trusted_mac *trustedmaclist; /**< @brief list of trusted macs */
-} s_config;
+} s_config, config_t;
 
 /** @brief Get the current gateway configuration */
 inline s_config *config_get_config(void);

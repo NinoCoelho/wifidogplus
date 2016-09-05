@@ -40,6 +40,7 @@ typedef struct client_s {
     int                 auth;               /* Client_auth_e */
     unsigned int        fw_state;           /* 0, 1 */
     unsigned int        tracked;            /* 0, 1 */
+    unsigned int        onoffline;          /* 0-offline, 1-online */
     time_t              allow_time;
     time_t              duration;           /* how much seconds for allow */
     char                recent_req[MAX_RECORD_URL_LEN];
@@ -93,6 +94,11 @@ enum Client_tracked_e {
     CLIENT_TRACKED = 1,
 };
 
+enum Client_ONOFFLINE_e {
+    CLIENT_OFFLINE = 0,
+    CLIENT_ONLINE = 1,
+};
+
 int client_list_init();
 
 int client_list_destory();
@@ -140,6 +146,8 @@ int client_list_get_auth(const char *mac, int *buf);
 int client_list_set_auth(const char *mac, int auth);
 int client_list_get_fw_state(const char *mac, unsigned int *buf);
 int client_list_set_fw_state(const char *mac, unsigned int fw_state);
+int client_list_get_onoffline(const char *mac, unsigned int *buf);
+int client_list_set_onoffline(const char *mac, unsigned int onoffline);
 int client_list_get_allow_time(const char *mac, time_t *buf);
 int client_list_set_allow_time(const char *mac, time_t allow_time);
 int client_list_get_duration(const char *mac, time_t *buf);

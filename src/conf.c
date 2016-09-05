@@ -125,6 +125,7 @@ typedef enum {
 	owd_to_url,
 	owd_skip_SuccessPage,
 	owd_reAssoc_reAuth,
+	oaudit_enable,
 } OpCodes;
 
 /** @internal
@@ -195,6 +196,7 @@ static const struct {
 	{ "Wd_wechat_secretKey", owd_wechat_secretKey },
 	{ "Wd_wechat_extend",   owd_wechat_extend },
 	{ "wd_to_url",	owd_to_url },
+	{ "audit_enable", oaudit_enable },
 	{ NULL,				oBadOption },
 };
 
@@ -264,6 +266,7 @@ config_init(void)
     config.wd_to_url = NULL;
     config.wd_skip_SuccessPage = 0;
     config.wd_reAssoc_reAuth = 0;
+    config.audit_enable = 0;
 }
 
 /**
@@ -1060,6 +1063,9 @@ config_read(const char *filename)
 				case owd_reAssoc_reAuth:
 				    sscanf(p1, "%d", &config.wd_reAssoc_reAuth);
 					break;
+                case oaudit_enable:
+			        sscanf(p1, "%d", &config.audit_enable);
+				    break;
 
 			    default:
 			        break;
