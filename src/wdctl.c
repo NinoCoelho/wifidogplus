@@ -48,6 +48,16 @@
 #endif
 #define debug(level, format, ...)// fprintf (stderr, "%s:%s:%d: "format"\n", __FILE__, __FUNCTION__, __LINE__, ## __VA_ARGS__)
 
+#ifndef careful_free
+#define careful_free(p) \
+do { \
+    if (p) { \
+        free(p); \
+        (p) = NULL; \
+    } \
+} while (0)
+#endif
+
 
 static s_config config;
 
@@ -528,6 +538,14 @@ static void wdctl_set_client(void)
     close(sock);
 }
 
+static void destory_config(void)
+{
+    careful_free(config.socket);
+	careful_free(config.param);
+    careful_free(config.config);
+    careful_free(config.value);
+}
+
 int
 main(int argc, char **argv)
 {
@@ -575,6 +593,8 @@ main(int argc, char **argv)
 		exit(1);
 		break;
 	}
+
+    destory_config();
 	exit(0);
 }
 

@@ -32,6 +32,15 @@
 #endif
 #define debug(level, format, ...) fprintf (stderr, "%s:%s:%d: "format"\n", __FILE__, __FUNCTION__, __LINE__, ## __VA_ARGS__)
 
+#ifndef careful_free
+#define careful_free(p) \
+do { \
+    if (p) { \
+        free(p); \
+        (p) = NULL; \
+    } \
+} while (0)
+#endif
 
 static appctl_t config;
 
@@ -371,6 +380,13 @@ static void ctl_appurl(char *buf)
     close(sock);
 }
 
+static void destory_config(void)
+{
+    careful_free(config.socket);
+	careful_free(config.param);
+    careful_free(config.config);
+    careful_free(config.value);
+}
 
 
 int
@@ -403,6 +419,8 @@ appctl_main(int argc, char **argv)
 		return (1);
 		break;
 	}
+
+    destory_config();
 	return (0);
 }
 
@@ -441,6 +459,8 @@ appctl_cmd(char *buf, char *pram)
 		return (1);
 		break;
 	}
+
+    destory_config();
 	return (0);
 }
 
@@ -467,6 +487,8 @@ appctl_appurl(char *buf, char *pram)
 		return (1);
 		break;
 	}
+
+    destory_config();
 	return (0);
 }
 
