@@ -47,19 +47,17 @@ int onoffline_enqueue(char *mac, int isonline, char *rssi, time_t time)
 	link_queue_node_t *pt = NULL;
 	onoffline_t new_data;
 
-	link_queue_alloc_node(pt, sizeof(onoffline_t));
-	if (!pt) {
-		printf("alloc fail\n");
-		return -1;
-	}
-
     memset(&new_data, 0, sizeof(new_data));
 	memcpy(new_data.mac, mac, strlen(mac));
     memcpy(new_data.rssi, rssi, strlen(rssi));
     new_data.is_online = isonline;
     new_data.time = time;
 
-	link_queue_init_node(pt, &new_data, sizeof(new_data));
+	link_queue_create_node(pt, &new_data, sizeof(new_data));
+    if (!pt) {
+		printf("link queue create fail\n");
+		return -1;
+	}
     if (isonline) {
 	    link_queue_enqueue(&online_queue, pt);
     } else {

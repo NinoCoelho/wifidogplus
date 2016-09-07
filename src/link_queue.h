@@ -139,6 +139,24 @@ do { \
 } while (0)
 
 /**
+ * function: create a node
+ * @node: the pointer to the node
+ * @srcdata: the source data, will copy to the data in the node
+ * @data_size: the size of the data in the node
+ * returns:
+ *     none
+ */
+#define link_queue_create_node(node, srcdata, data_size) \
+do { \
+    node = NULL; \
+    link_queue_alloc_node(node, data_size); \
+    if (!node) { \
+        break; \
+    } \
+    link_queue_init_node(node, srcdata, data_size); \
+} while (0)
+
+/**
  * function: free the memory of a node
  * @node: the pointer of the node
  * returns:
