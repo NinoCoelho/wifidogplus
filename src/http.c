@@ -1368,7 +1368,9 @@ void http_callback_shumo(httpd * webserver,request * r)
     }
 	debug(LOG_INFO, "redirect_url is %s", redirect_url);
 	url = strstr(tmp_url, "redirect");
-    http_send_redirect(r, url+9, NULL);
+	if(url != NULL){
+	    http_send_redirect(r, url+9, NULL);
+	}
 	careful_free(mac);
 
 }
