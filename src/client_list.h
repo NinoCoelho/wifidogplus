@@ -35,12 +35,15 @@ typedef struct client_s {
     char                mac[MAC_ADDR_LEN];
     char                ip[MAX_IPV4_LEN];
     char                token[MAX_TOKEN_LEN];
+    char                account[MAX_ACCOUNT_LEN];
     char                openid[MAX_TOKEN_LEN];
     char                hostname[MAX_HOST_NAME_LEN];
     int                 auth;               /* Client_auth_e */
     unsigned int        fw_state;           /* 0, 1 */
     unsigned int        tracked;            /* 0, 1 */
     unsigned int        onoffline;          /* 0-offline, 1-online */
+    unsigned int        reported;          /* 1-yes, 0-no */
+    int                 rssi;
     time_t              allow_time;
     time_t              duration;           /* how much seconds for allow */
     char                recent_req[MAX_RECORD_URL_LEN];
@@ -48,19 +51,21 @@ typedef struct client_s {
     counters_t          counters;
 } client_t;
 
+typedef int (*CLIENT_LIST_CONDITION_FUNC)(const client_t *client, _IN void *args);
+typedef int (*CLIENT_LIST_TRAVERSE_FUNC)(const client_t *client, _IN void *args);
+
 typedef struct client_hold_s {
-    list_head_t         list;
+    dlist_head_t        list;
     client_t            client;
 } client_hold_t;
 
-typedef int (*CLIENT_LIST_CONDITION_FUNC)(const client_t *client, _IN void *args);
-typedef int (*CLIENT_LIST_TRAVERSE_FUNC)(const client_t *client, _IN void *args);
 typedef struct client_list_hold_s {
-    list_head_t *head;
+    dlist_head_t *head;
     unsigned int count;
     CLIENT_LIST_CONDITION_FUNC func;
     void *args;
 } client_list_hold_t;
+
 
 #define MAX_CLIENT_NUM          (1 << 10UL)     /* too mush would make systm slow down */
 
@@ -97,6 +102,11 @@ enum Client_tracked_e {
 enum Client_ONOFFLINE_e {
     CLIENT_OFFLINE = 0,
     CLIENT_ONLINE = 1,
+};
+
+enum Client_status_report_e {
+    CLIENT_STATUS_UNREPORTED = 0,
+    CLIENT_STATUS_REPORTED = 1,
 };
 
 int client_list_init();
@@ -140,6 +150,8 @@ int client_list_get_ip(const char *mac, char *buf);
 int client_list_set_ip(const char *mac, const char *ip);
 int client_list_get_token(const char *mac, char *buf);
 int client_list_set_token(const char *mac, const char *token);
+int client_list_get_account(const char *mac, char *buf);
+int client_list_set_account(const char *mac, const char *account);
 int client_list_get_openid(const char *mac, char *buf);
 int client_list_set_openid(const char *mac, const char *openid);
 int client_list_get_auth(const char *mac, int *buf);
@@ -148,6 +160,10 @@ int client_list_get_fw_state(const char *mac, unsigned int *buf);
 int client_list_set_fw_state(const char *mac, unsigned int fw_state);
 int client_list_get_onoffline(const char *mac, unsigned int *buf);
 int client_list_set_onoffline(const char *mac, unsigned int onoffline);
+int client_list_get_reported(const char *mac, unsigned int *buf);
+int client_list_set_reported(const char *mac, unsigned int reported);
+int client_list_get_rssi(const char *mac, int *buf);
+int client_list_set_rssi(const char *mac, int rssi);
 int client_list_get_allow_time(const char *mac, time_t *buf);
 int client_list_set_allow_time(const char *mac, time_t allow_time);
 int client_list_get_duration(const char *mac, time_t *buf);
@@ -176,7 +192,7 @@ int client_list_get_dos_count(const char *mac, unsigned int *buf);
 int client_list_increase_dos_count(const char *mac);
 int client_list_clear_dos_count(const char *mac);
 int client_list_find_mac_by_ip(_IN char *ip, _OUT char *mac);
-int client_list_find_mac_by_ip_exclude(_IN char *ip, _IN char *mac, _OUT char *buf);
+int client_list_find_mac_by_ip_exclude(_IN const char *ip, _IN const char *mac, _OUT char *buf);
 int client_list_find_mac_by_token(_IN char *token, _OUT char *mac);
 int client_list_find_mac_by_openid_exclude(_IN char *openid, _IN char *mac, _OUT char *buf);
 int client_list_peek(const char *mac);

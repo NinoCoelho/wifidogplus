@@ -39,6 +39,7 @@
 #include "client_access_queue.h"
 #include "client_record_queue.h"
 #include "wifiga_ubus_client.h"
+#include "siso_queue.h"
 
 
 sem_t sem_client_access_preproccess;
@@ -46,7 +47,8 @@ sem_t sem_client_access_preproccess;
 
 int thread_client_access_preproccess(char *arg)
 {
-    unsigned char mac[MAC_ADDR_LEN];
+    client_node_t node;
+    unsigned char *mac = node.mac;
     int ret;
     unsigned int auth;
     unsigned int fw_state;
@@ -57,9 +59,9 @@ int thread_client_access_preproccess(char *arg)
 
     while(1)
     {
-        memset(mac, 0, MAC_ADDR_LEN);
+        memset(&node, 0, sizeof(client_node_t));
         sem_wait(&sem_client_access_get_mac);
-        if (siso_queue_get_mac(mac)) {
+        if (get_client_dequeue(&node)) {
             debug(LOG_WARNING, "get mac from queue error");
             continue;
         }
@@ -88,6 +90,15 @@ int thread_client_access_preproccess(char *arg)
 #endif
         } else {
             (void)client_list_add(mac);
+            client_list_get_client(mac, &client);
+        }
+
+        if (client.onoffline== CLIENT_OFFLINE) {
+            (void)client_list_set_onoffline(mac, CLIENT_ONLINE);
+            (void)client_list_set_reported(mac, CLIENT_STATUS_UNREPORTED);
+        }
+        if (0 != node.rssi) {
+            (void)client_list_set_rssi(mac, node.rssi);
         }
 
         if (config->wd_reAssoc_reAuth) {
@@ -103,11 +114,6 @@ int thread_client_access_preproccess(char *arg)
                 (void)iptables_fw_tracked_mac(mac);
             }
             (void)client_list_set_last_updated(mac, current_time);
-        }
-
-        if (config->audit_enable) {
-            (void)onoffline_enqueue(mac, CLIENT_ONLINE, "0", current_time);
-            (void)client_list_set_onoffline(mac, CLIENT_ONLINE);
         }
 
         if (config->wd_auth_mode == AUTH_LOCAL_APPCTL) {

@@ -11,28 +11,36 @@
 #define _GET_CLIENT_H_
 
 #include <semaphore.h>
+#include "siso_queue.h"
+
+typedef struct client_node_s {
+	char mac[MAC_ADDR_LEN];
+	int rssi;
+} client_node_t;
 
 extern sem_t sem_client_access_get_mac;
 
 int thread_get_client(char *arg);
 
-/* get a mac from circular array
- * attention: must be "single in single out", if not you should using mutex lock
+/**
+ * dequeue a client from siso_queue
+ * @buf:        the buf to receive the dequeued client
+ * @retures:
+ *      0:      success
+ *      -1:     fail
  */
-int get_client_get_mac(char *buf);
+int get_client_dequeue(client_node_t *buf);
 
-/* set a mac to circular array
- * attention: must be "single in single out", if not you should using mutex lock
+/**
+ * enqueue a client to siso_queue
+ * @mac:        the mac which to enqueue
+ * @rssi:       rssi
+ * @returns:
+ *      0:      success
+ *      1:      existed, did not need to enqueue
+ *      -1:     fail
  */
-int get_client_set_mac(char *mac);
-
-/* peek a mac from circular array, did not delete the getting mac
- * attention: must be "single in single out", if not you should using mutex lock
- */
-int get_client_peek_mac(char *buf);
-
-void get_client_show_all();
-
+int get_client_enqueue(char *mac, int rssi);
 
 #endif      /* _GET_CLIENT_H_ */
 

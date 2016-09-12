@@ -51,22 +51,22 @@ typedef struct passwd_s {
 } passwd_t;
 
 typedef struct mac_node_s {
-    struct list_head    list;
+    struct dlist_head    list;
     char                mac[MAC_ADDR_LEN];
 } mac_node_t;
 
 typedef struct url_node_s {
-    struct list_head    list;
+    struct dlist_head    list;
     char                url[MAX_URL_LEN];
 } url_node_t;
 
-static struct list_head history_mac_list ;
-static struct list_head server_mac_list;
+static struct dlist_head history_mac_list ;
+static struct dlist_head server_mac_list;
 static char *white_list_mac_server = NULL;
 static char *white_list_mac_history = NULL;//add jore
 
-static struct list_head history_url_list;
-static struct list_head server_url_list;
+static struct dlist_head history_url_list;
+static struct dlist_head server_url_list;
 static char *white_list_url_server = NULL;
 static char *white_list_url_history = NULL;//add jore
 
@@ -95,10 +95,10 @@ void thread_white_list(char *arg)
     pthread_mutex_t         cond_mutex = PTHREAD_MUTEX_INITIALIZER;
     struct  timespec        timeout;
 
-    INIT_LIST_HEAD(&history_mac_list);
-    INIT_LIST_HEAD(&server_mac_list);
-    INIT_LIST_HEAD(&history_url_list);
-    INIT_LIST_HEAD(&server_url_list);
+    INIT_DLIST_HEAD(&history_mac_list);
+    INIT_DLIST_HEAD(&server_mac_list);
+    INIT_DLIST_HEAD(&history_url_list);
+    INIT_DLIST_HEAD(&server_url_list);
 
     memset(&g_passwd, 0, sizeof(g_passwd));
     g_passwd.time = time(NULL);
@@ -125,21 +125,21 @@ void thread_white_list(char *arg)
     }
 
     mac_node_t *mac_pos, *mac_pos_tmp;
-    list_for_each_entry_safe(mac_pos, mac_pos_tmp, &server_mac_list, mac_node_t, list) {
-        list_del(&mac_pos->list);
+    dlist_for_each_entry_safe(mac_pos, mac_pos_tmp, &server_mac_list, mac_node_t, list) {
+        dlist_del(&mac_pos->list);
         careful_free(mac_pos);
     }
-    list_for_each_entry_safe(mac_pos, mac_pos_tmp, &history_mac_list, mac_node_t, list) {
-        list_del(&mac_pos->list);
+    dlist_for_each_entry_safe(mac_pos, mac_pos_tmp, &history_mac_list, mac_node_t, list) {
+        dlist_del(&mac_pos->list);
         careful_free(mac_pos);
     }
     url_node_t *url_pos, *url_pos_tmp;
-    list_for_each_entry_safe(url_pos, url_pos_tmp, &server_url_list, url_node_t, list) {
-        list_del(&url_pos->list);
+    dlist_for_each_entry_safe(url_pos, url_pos_tmp, &server_url_list, url_node_t, list) {
+        dlist_del(&url_pos->list);
         careful_free(url_pos);
     }
-    list_for_each_entry_safe(url_pos, url_pos_tmp, &history_url_list, url_node_t, list) {
-        list_del(&url_pos->list);
+    dlist_for_each_entry_safe(url_pos, url_pos_tmp, &history_url_list, url_node_t, list) {
+        dlist_del(&url_pos->list);
         careful_free(url_pos);
     }
 
@@ -320,12 +320,12 @@ static int print_url_list()
     url_node_t *pos;
 
     debug(LOG_DEBUG, "print server_url_list");
-    list_for_each_entry(pos, &server_url_list, url_node_t, list) {
+    dlist_for_each_entry(pos, &server_url_list, url_node_t, list) {
         printf("%s, ", pos->url);
     }
     printf("\n");
     debug(LOG_DEBUG, "print history_url_list");
-    list_for_each_entry(pos, &history_url_list, url_node_t, list) {
+    dlist_for_each_entry(pos, &history_url_list, url_node_t, list) {
         printf("%s, ", pos->url);
     }
     printf("\n");
@@ -342,11 +342,11 @@ static int setWhiteurlDiff()
     int count = 0;
 
     //print_url_list();
-    list_for_each_entry_safe(server_pos, server_pos_tmp, &server_url_list, url_node_t, list) {
+    dlist_for_each_entry_safe(server_pos, server_pos_tmp, &server_url_list, url_node_t, list) {
         exist_flag = 0;
-        list_for_each_entry_safe(history_pos, history_pos_tmp, &history_url_list, url_node_t, list) {
+        dlist_for_each_entry_safe(history_pos, history_pos_tmp, &history_url_list, url_node_t, list) {
             if (!strncasecmp(server_pos->url, history_pos->url, MAX_URL_LEN)) {
-                list_del(&history_pos->list);
+                dlist_del(&history_pos->list);
                 careful_free(history_pos);
                 exist_flag = 1;
                 break;
@@ -360,16 +360,16 @@ static int setWhiteurlDiff()
     }
     //print_url_list();
 
-    list_for_each_entry_safe(history_pos, history_pos_tmp, &history_url_list, url_node_t, list) {
+    dlist_for_each_entry_safe(history_pos, history_pos_tmp, &history_url_list, url_node_t, list) {
         Whiteurl_del_from_iptables(history_pos->url);
-        list_del(&history_pos->list);
+        dlist_del(&history_pos->list);
         careful_free(history_pos);
         OVERFLOW_FEED(THIS_THREAD_NAME, count, MAX_DO_COMMAND_CONTINUE);
     }
     //print_url_list();
 
-    list_for_each_entry_safe(server_pos, server_pos_tmp, &server_url_list, url_node_t, list) {
-        list_move(&server_pos->list, &history_url_list);
+    dlist_for_each_entry_safe(server_pos, server_pos_tmp, &server_url_list, url_node_t, list) {
+        dlist_move(&server_pos->list, &history_url_list);
     }
     //print_url_list();
 
@@ -414,7 +414,7 @@ static int setWhiteurl(char *reponse)
 	    debug(LOG_DEBUG, "set white_list_url_server single:[%s]", url_single);
         url_node_t *new_node = (url_node_t *)safe_malloc(sizeof(url_node_t));
         memcpy(new_node->url, url_single, MAX_URL_LEN);
-        list_add(&new_node->list, &server_url_list);
+        dlist_add(&new_node->list, &server_url_list);
 	    url_single = strtok(NULL, seps);
 	}
 
@@ -429,12 +429,12 @@ static int print_mac_list()
 {
     mac_node_t *pos;
     debug(LOG_DEBUG, "print server_mac_list");
-    list_for_each_entry(pos, &server_mac_list, mac_node_t, list) {
+    dlist_for_each_entry(pos, &server_mac_list, mac_node_t, list) {
         printf("%s, ", pos->mac);
     }
     printf("\n");
     debug(LOG_DEBUG, "print history_mac_list");
-    list_for_each_entry(pos, &history_mac_list, mac_node_t, list) {
+    dlist_for_each_entry(pos, &history_mac_list, mac_node_t, list) {
         printf("%s, ", pos->mac);
     }
     printf("\n");
@@ -451,11 +451,11 @@ static int setWhiteMacDiff()
     int count = 0;
 
     //print_mac_list();
-    list_for_each_entry_safe(server_pos, server_pos_tmp, &server_mac_list, mac_node_t, list) {
+    dlist_for_each_entry_safe(server_pos, server_pos_tmp, &server_mac_list, mac_node_t, list) {
         exist_flag = 0;
-        list_for_each_entry_safe(history_pos, history_pos_tmp, &history_mac_list, mac_node_t, list) {
+        dlist_for_each_entry_safe(history_pos, history_pos_tmp, &history_mac_list, mac_node_t, list) {
             if (!strncasecmp(server_pos->mac, history_pos->mac, MAC_ADDR_LEN)) {
-                list_del(&history_pos->list);
+                dlist_del(&history_pos->list);
                 careful_free(history_pos);
                 exist_flag = 1;
                 break;
@@ -472,18 +472,18 @@ static int setWhiteMacDiff()
     }
     //print_mac_list();
 
-    list_for_each_entry_safe(history_pos, history_pos_tmp, &history_mac_list, mac_node_t, list) {
+    dlist_for_each_entry_safe(history_pos, history_pos_tmp, &history_mac_list, mac_node_t, list) {
         (void)client_list_set_auth(history_pos->mac, CLIENT_CHAOS);
         (void)iptables_fw_tracked_mac(history_pos->mac);    /* it is necessary */
         (void)iptables_fw_deny_mac(history_pos->mac);
-        list_del(&history_pos->list);
+        dlist_del(&history_pos->list);
         careful_free(history_pos);
         OVERFLOW_FEED(THIS_THREAD_NAME, count, MAX_DO_COMMAND_CONTINUE);
     }
     //print_mac_list();
 
-    list_for_each_entry_safe(server_pos, server_pos_tmp, &server_mac_list, mac_node_t, list) {
-        list_move(&server_pos->list, &history_mac_list);
+    dlist_for_each_entry_safe(server_pos, server_pos_tmp, &server_mac_list, mac_node_t, list) {
+        dlist_move(&server_pos->list, &history_mac_list);
     }
     //print_mac_list();
 
@@ -528,7 +528,7 @@ static int setWhitemac(char *reponse)
 	    debug(LOG_DEBUG, "set white_list_mac_server single:[%s]", mac_single);
         mac_node_t *new_node = (mac_node_t *)safe_malloc(sizeof(mac_node_t));
         memcpy(new_node->mac, mac_single, MAC_ADDR_LEN);
-        list_add(&new_node->list, &server_mac_list);
+        dlist_add(&new_node->list, &server_mac_list);
 	    mac_single = strtok(NULL, seps);
 	}
 
@@ -604,7 +604,7 @@ static int setPasswd(char *reponse)
     char pwd_history[32] = DEFAULT_PASSWORD;
     FILE *file;
     int ret;
-    
+
 #ifdef __MTK_SDK__
     if (bl_get_config("Password", pwd_history)) {
         memcpy(pwd_history, DEFAULT_PASSWORD, strlen(DEFAULT_PASSWORD));

@@ -44,7 +44,7 @@
 #define MAX_CLIENT_RECORD_COUNT (1 << 13UL)
 
 
-static LIST_HEAD(client_record_queue);
+static DLIST_HEAD(client_record_queue);
 static pthread_mutex_t client_record_queue_mutex = PTHREAD_MUTEX_INITIALIZER;
 static unsigned int client_record_count;
 
@@ -61,8 +61,8 @@ void client_record_queue_destory()
     client_record_queue_node_t      *pos_tmp;
 
     pthread_mutex_lock(&client_record_queue_mutex);
-    list_for_each_entry_safe(pos, pos_tmp, &client_record_queue, client_record_queue_node_t, list) {
-        list_del(&pos->list);
+    dlist_for_each_entry_safe(pos, pos_tmp, &client_record_queue, client_record_queue_node_t, dlist) {
+        dlist_del(&pos->dlist);
         client_record_count--;
         careful_free(pos);
     }
@@ -76,7 +76,7 @@ static client_record_queue_node_t *client_record_queue_find(char *mac, time_t as
 {
     client_record_queue_node_t      *pos;
 
-    list_for_each_entry(pos, &client_record_queue, client_record_queue_node_t, list) {
+    dlist_for_each_entry(pos, &client_record_queue, client_record_queue_node_t, dlist) {
         if (!strncasecmp(mac, pos->mac, MAC_ADDR_LEN) && (pos->assoc_time == assoc_time)) {
             return pos;
         }
@@ -115,7 +115,7 @@ int client_record_queue_enqueue(char *mac, time_t assoc_time)
     memset(new_node, 0, sizeof(client_record_queue_node_t));
     memcpy(new_node->mac, mac, MAC_ADDR_LEN);
     new_node->assoc_time = assoc_time;
-    list_add_tail(&new_node->list, &client_record_queue);
+    dlist_add_tail(&new_node->dlist, &client_record_queue);
     client_record_count++;
     pthread_mutex_unlock(&client_record_queue_mutex);
 
@@ -131,14 +131,14 @@ int client_record_queue_dequeue(client_record_queue_node_t *buf)
     }
 
     pthread_mutex_lock(&client_record_queue_mutex);
-    ret_node = list_first_entry(&client_record_queue, client_record_queue_node_t, list);
+    ret_node = dlist_first_entry(&client_record_queue, client_record_queue_node_t, dlist);
     if (!ret_node) {
         pthread_mutex_unlock(&client_record_queue_mutex);
         return -1;
     }
 
     memcpy(buf, ret_node, sizeof(client_record_queue_node_t));
-    list_del(&ret_node->list);
+    dlist_del(&ret_node->dlist);
     client_record_count--;
     pthread_mutex_unlock(&client_record_queue_mutex);
 
@@ -161,7 +161,7 @@ int client_record_queue_delete(char *mac, time_t assoc_time)
         return -1;
     }
 
-    list_del(&ret_node->list);
+    dlist_del(&ret_node->dlist);
     client_record_count--;
     pthread_mutex_unlock(&client_record_queue_mutex);
 
@@ -181,7 +181,7 @@ int client_record_queue_peek_last(client_record_queue_node_t *buf)
     }
 
     pthread_mutex_lock(&client_record_queue_mutex);
-    ret_node = list_last_entry(&client_record_queue, client_record_queue_node_t, list);
+    ret_node = dlist_last_entry(&client_record_queue, client_record_queue_node_t, dlist);
     if (!ret_node) {
         pthread_mutex_unlock(&client_record_queue_mutex);
         debug(LOG_ERR, "can not get last mac");
@@ -201,7 +201,7 @@ void client_record_queue_show_all()
 
     printf("%s: print all mac in client_record_queue\n", __FUNCTION__);
     pthread_mutex_lock(&client_record_queue_mutex);
-    list_for_each_entry(pos, &client_record_queue, client_record_queue_node_t, list) {
+    dlist_for_each_entry(pos, &client_record_queue, client_record_queue_node_t, dlist) {
         printf("%d: %s %d\n", ++i, pos->mac, pos->assoc_time);
     }
     printf("total %u\n", client_record_count);
@@ -214,7 +214,7 @@ void client_record_queue_traverse(_IN CLIENT_RECORD_TRAVERSE_FUNC func, _IN void
     client_record_queue_node_t      *pos_tmp;
 
     pthread_mutex_lock(&client_record_queue_mutex);
-    list_for_each_entry_safe(pos, pos_tmp, &client_record_queue, client_record_queue_node_t, list) {
+    dlist_for_each_entry_safe(pos, pos_tmp, &client_record_queue, client_record_queue_node_t, dlist) {
         if (func) {
             (void)func(pos, arg);
         }

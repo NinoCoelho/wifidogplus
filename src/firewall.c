@@ -77,6 +77,7 @@
 #include "watchdog.h"
 #include "qos.h"
 #include "wifiga_ubus_client.h"
+#include "counterfeit.h"
 
 
 extern int fw_rebuild_flag;
@@ -350,7 +351,7 @@ static void del_client(const char *mac)
 void del_free_certification_client(void)
 {
     typedef struct client_node_s {
-        struct list_head    list;
+        struct dlist_head   list;
         char                mac[MAC_ADDR_LEN];
         char                intf[MAX_INTERFACE_NAME_LEN];
     } client_node_t;
@@ -358,8 +359,8 @@ void del_free_certification_client(void)
     FILE           *proc;
     char intf[MAX_INTERFACE_NAME_LEN] = {0};
     char mac[MAC_ADDR_LEN] = {0};
-    LIST_HEAD(auth_device_client_list);
-    LIST_HEAD(unauth_device_client_list);
+    DLIST_HEAD(auth_device_client_list);
+    DLIST_HEAD(unauth_device_client_list);
     client_node_t *pos, *pos_tmp, *pos1;
 
     if (!(proc = fopen("/proc/net/arp", "r"))) {
@@ -377,9 +378,9 @@ void del_free_certification_client(void)
 
         if (strncasecmp(new_node->intf, config_get_config()->gw_interface,
             strlen(config_get_config()->gw_interface) + 1) == 0) {
-            list_add(&new_node->list, &auth_device_client_list);
+            dlist_add(&new_node->list, &auth_device_client_list);
         } else {
-            list_add(&new_node->list, &unauth_device_client_list);
+            dlist_add(&new_node->list, &unauth_device_client_list);
         }
 
         memset(mac, 0, MAC_ADDR_LEN);
@@ -388,27 +389,27 @@ void del_free_certification_client(void)
     }
     fclose(proc);
 
-    list_for_each_entry_safe(pos, pos_tmp, &unauth_device_client_list, client_node_t, list) {
-        list_for_each_entry(pos1, &auth_device_client_list, client_node_t, list) {
+    dlist_for_each_entry_safe(pos, pos_tmp, &unauth_device_client_list, client_node_t, list) {
+        dlist_for_each_entry(pos1, &auth_device_client_list, client_node_t, list) {
             if (strncasecmp(pos->mac, pos1->mac, MAC_ADDR_LEN) == 0) {
                 debug(LOG_DEBUG, "mac %s exist in interface %s and interface %s, did not need to del",
                     pos->mac, pos->intf, pos1->intf);
-                list_del(&pos->list);
+                dlist_del(&pos->list);
                 careful_free(pos);
                 break;
             }
         }
     }
 
-    list_for_each_entry_safe(pos, pos_tmp, &unauth_device_client_list, client_node_t, list) {
+    dlist_for_each_entry_safe(pos, pos_tmp, &unauth_device_client_list, client_node_t, list) {
         debug(LOG_DEBUG, "delete mac %s which in the interface %s", pos->mac, pos->intf);
         del_client(pos->mac);
-        list_del(&pos->list);
+        dlist_del(&pos->list);
         careful_free(pos);
     }
 
-    list_for_each_entry_safe(pos, pos_tmp, &auth_device_client_list, client_node_t, list) {
-        list_del(&pos->list);
+    dlist_for_each_entry_safe(pos, pos_tmp, &auth_device_client_list, client_node_t, list) {
+        dlist_del(&pos->list);
         careful_free(pos);
     }
 }
@@ -423,7 +424,7 @@ void del_free_certification_client(void)
 void
 fw_sync_with_authserver(void)
 {
-    struct list_head client_traverse_list = LIST_HEAD_INIT(client_traverse_list);
+    struct dlist_head client_traverse_list = LIST_HEAD_INIT(client_traverse_list);
     client_hold_t *pos, *pos_tmp;
     t_authresponse  authresponse;
     s_config *config = config_get_config();
@@ -459,7 +460,7 @@ fw_sync_with_authserver(void)
     }
 
     /* sync with authserver, using client_traverse_list */
-    list_for_each_entry(pos, &client_traverse_list, client_hold_t, list) {
+    dlist_for_each_entry(pos, &client_traverse_list, client_hold_t, list) {
         if (!client_list_is_exist(pos->client.mac)) {
             debug(LOG_ERR, "Node %s was freed while being re-validated!", pos->client.mac);
             continue;
@@ -493,6 +494,17 @@ fw_sync_with_authserver(void)
 
         if (config->qosEnable) {
             do_qos(pos->client.mac);
+        }
+
+        if (config->audit_enable && CLIENT_STATUS_UNREPORTED == pos->client.reported) {
+            if (strlen(pos->client.account) && 0 != strncasecmp(pos->client.account, DUMY_ACCOUNT, strlen(DUMY_ACCOUNT) + 1)) {
+                (void)report_onoffline(pos->client.mac);
+            } else if (pos->client.auth > CLIENT_CHAOS && pos->client.fw_state == CLIENT_ALLOWED) {
+                char phone[PHONE_NUMBER_LEN] = {0};
+                (void)counterfeit_phone_num(phone);
+                (void)client_list_set_account(pos->client.mac, phone);
+                (void)report_onoffline(pos->client.mac);
+            }
         }
 
 #if 0
@@ -544,9 +556,9 @@ fw_sync_with_authserver(void)
             /* Timing out user */
             (void)iptables_fw_deny_mac(pos->client.mac);
             (void)iptables_fw_untracked_mac(pos->client.mac);
-            if (config->audit_enable && pos->client.onoffline == CLIENT_ONLINE) {
-                (void)onoffline_enqueue(pos->client.mac, CLIENT_OFFLINE, "0", current_time);
+            if (pos->client.onoffline == CLIENT_ONLINE) {;
                 (void)client_list_set_onoffline(pos->client.mac, CLIENT_OFFLINE);
+                (void)client_list_set_reported(pos->client.mac, CLIENT_STATUS_UNREPORTED);
             }
 
             /* Advertise the logout if we have an auth server

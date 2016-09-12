@@ -1,31 +1,31 @@
 /**
- * å®ç°åŒå‘å¾ªç¯é“¾è¡¨
- * ç§»æ¤è‡ªlinuxä¹‹list.hï¼Œæ‰€æœ‰æ›´è¯¦ç»†è¯´æ˜è§linuxä¹‹list.hï¼ŒåŒ…æ‹¬å„å‡½æ•°çš„é™·é˜±
- * æœ¬æ–‡æ¡£ä¸­å¤´entryå’Œé“¾è¡¨è¡¨ç¤ºçš„æ„æ€ä¸€æ ·ï¼Œå¸¸å¸¸ç”¨å¤´entryè¡¨ç¤ºé“¾è¡¨
- * éå†å‡½æ•°æ— _entryä¸€å¾‹éå†entryï¼Œæœ‰_entryä¸€å¾‹éå†èŠ‚ç‚¹
- * ä¼ å…¥å‚æ•°è‹¥æ— ç‰¹æ®Šè¯´æ˜å‡ä¸ºæŒ‡é’ˆ
+ * ÊµÏÖË«ÏòÑ­»·Á´±í
+ * ÒÆÖ²×ÔlinuxÖ®list.h£¬ËùÓĞ¸üÏêÏ¸ËµÃ÷¼ûlinuxÖ®list.h£¬°üÀ¨¸÷º¯ÊıµÄÏİÚå
+ * ±¾ÎÄµµÖĞÍ·entryºÍÁ´±í±íÊ¾µÄÒâË¼Ò»Ñù£¬³£³£ÓÃÍ·entry±íÊ¾Á´±í
+ * ±éÀúº¯ÊıÎŞ_entryÒ»ÂÉ±éÀúentry£¬ÓĞ_entryÒ»ÂÉ±éÀú½Úµã
+ * ´«Èë²ÎÊıÈôÎŞÌØÊâËµÃ÷¾ùÎªÖ¸Õë
  *
  * cjpthree@126.com 2011-4-7 Create
- * v1: 2014-4-10 ä¿®æ”¹ä¸ºæ›´é€šç”¨çš„å½¢å¼ï¼Œå»é™¤æ‰€æœ‰inlineå‡½æ•°ï¼Œå®ç°ä¸ºå®ï¼Œå»é™¤typeofï¼Œä¾èµ–ç”¨æˆ·ä¼ å…¥type
+ * v1: 2014-4-10 ĞŞ¸ÄÎª¸üÍ¨ÓÃµÄĞÎÊ½£¬È¥³ıËùÓĞinlineº¯Êı£¬ÊµÏÖÎªºê£¬È¥³ıtypeof£¬ÒÀÀµÓÃ»§´«Èëtype
  *
- * ä½¿ç”¨ç¤ºä¾‹:
+ * Ê¹ÓÃÊ¾Àı:
  * struct mynode {
- *     struct list_head list;
+ *     struct dlist_head dlist;
  *     // other members
  * };
- * struct list_head mylist;
+ * struct dlist_head mydlist;
  * struct mynode node1;
- * INIT_LIST_HEAD(&mylist);
- * list_add(&(node1.list), &mylist);
+ * INIT_DLIST_HEAD(&mydlist);
+ * dlist_add(&(node1.dlist), &mydlist);
  */
 
-#ifndef _LINUX_LIST_H_
-#define _LINUX_LIST_H_
+#ifndef _LINUX_DLIST_H_
+#define _LINUX_DLIST_H_
 
 #include <stdio.h>
 
-#define LIST_POISON1 NULL
-#define LIST_POISON2 NULL
+#define DLIST_POISON1 NULL
+#define DLIST_POISON2 NULL
 
 #ifndef offsetof
 #define offsetof(type, member) \
@@ -38,7 +38,7 @@
 #endif
 
 /**
- * è‹¥ç³»ç»Ÿæ”¯æŒé¢„ç¼“å­˜prefetchï¼Œå®šä¹‰æ­¤å®ï¼Œæ‰“å¼€é¢„ç¼“å­˜ï¼Œç†è®ºä¸Šå¯ä»¥æé«˜é€Ÿåº¦
+ * ÈôÏµÍ³Ö§³ÖÔ¤»º´æprefetch£¬¶¨Òå´Ëºê£¬´ò¿ªÔ¤»º´æ£¬ÀíÂÛÉÏ¿ÉÒÔÌá¸ßËÙ¶È
  */
 //#define SUPPORT_PREFETCH
 #ifndef SUPPORT_PREFETCH
@@ -47,55 +47,55 @@
 #endif
 
 /**
- * åŒå‘å¾ªç¯é“¾è¡¨ç»“æ„ï¼Œç§°ä¹‹ä¸ºentryï¼ŒåµŒå…¥èŠ‚ç‚¹ä¸­ä½¿ç”¨ã€‚é“¾è¡¨æœ‰å¤´entry
+ * Ë«ÏòÑ­»·Á´±í½á¹¹£¬³ÆÖ®Îªentry£¬Ç¶Èë½ÚµãÖĞÊ¹ÓÃ¡£Á´±íÓĞÍ·entry
  *
- * æ³¨æ„: Some of the internal functions ("__xxx") are useful when
+ * ×¢Òâ: Some of the internal functions ("__xxx") are useful when
  * manipulating whole lists rather than single entries, as
  * sometimes we already know the next/prev entries and we can
  * generate better code by using them directly rather than
  * using the generic single-entry routines.
  */
-typedef struct list_head {
-    struct list_head *next; /* æŒ‡å‘åé¢çš„entry */
-    struct list_head *prev; /* æŒ‡å‘å‰é¢çš„entry */
-} list_head_t;
+typedef struct dlist_head {
+    struct dlist_head *next; /* Ö¸ÏòºóÃæµÄentry */
+    struct dlist_head *prev; /* Ö¸ÏòÇ°ÃæµÄentry */
+} dlist_head_t;
 
 /**
- * åˆå§‹åŒ–é“¾è¡¨
- * @name: é“¾è¡¨çš„æ ‡è¯†ç¬¦
+ * ³õÊ¼»¯Á´±í
+ * @name: Á´±íµÄ±êÊ¶·û
  *
- * æ³¨æ„ï¼šnameä¸ºé“¾è¡¨æ ‡è¯†ç¬¦ï¼Œå¹¶éæŒ‡é’ˆï¼Œæœ¬æ–‡æ¡£å‡ºç°çš„head = &name
+ * ×¢Òâ£ºnameÎªÁ´±í±êÊ¶·û£¬²¢·ÇÖ¸Õë£¬±¾ÎÄµµ³öÏÖµÄhead = &name
  */
-#define LIST_HEAD_INIT(name) \
+#define DLIST_HEAD_INIT(name) \
     {&(name), &(name)}
 
 /**
- * å®šä¹‰å¹¶åˆå§‹åŒ–é“¾è¡¨
- * @name: é“¾è¡¨çš„æ ‡è¯†ç¬¦
+ * ¶¨Òå²¢³õÊ¼»¯Á´±í
+ * @name: Á´±íµÄ±êÊ¶·û
  */
-#define LIST_HEAD(name) \
-    list_head_t (name) = LIST_HEAD_INIT(name)
+#define DLIST_HEAD(name) \
+    dlist_head_t (name) = DLIST_HEAD_INIT(name)
 
 /**
- * åˆå§‹åŒ–é“¾è¡¨
- * @head: éœ€è¦åˆå§‹åŒ–çš„é“¾è¡¨
+ * ³õÊ¼»¯Á´±í
+ * @head: ĞèÒª³õÊ¼»¯µÄÁ´±í
  */
-#define INIT_LIST_HEAD(head) \
+#define INIT_DLIST_HEAD(head) \
 do { \
     (head)->next = (head); \
     (head)->prev = (head); \
 } while (0)
 
 /**
- * åœ¨ä¸¤ä¸ªè¿ç»­çš„entryé—´æ’å…¥ä¸€ä¸ªæ–°çš„entry
- * @new_entry: è¦æ’å…¥çš„entry
- * @prev_entry: è¿ç»­çš„entryçš„å‰é¢é‚£ä¸ª
- * @next_entry: è¿ç»­çš„entryçš„åé¢é‚£ä¸ª
+ * ÔÚÁ½¸öÁ¬ĞøµÄentry¼ä²åÈëÒ»¸öĞÂµÄentry
+ * @new_entry: Òª²åÈëµÄentry
+ * @prev_entry: Á¬ĞøµÄentryµÄÇ°ÃæÄÇ¸ö
+ * @next_entry: Á¬ĞøµÄentryµÄºóÃæÄÇ¸ö
  *
- * ç°åœ¨çš„å®ç°list_add_tailéœ€è¦ä¸´æ—¶å˜é‡ï¼Œå‡å¦‚åé¢ä¸¤å¥ä½ç½®å˜æ¢äº†ï¼Œåˆ™list_addéœ€è¦åˆ›å»ºä¸´æ—¶å˜é‡
- * æ•…å¯¹listæœªè¶³å¤Ÿäº†è§£ä¸è¦å°è¯•è°ƒç”¨æ­¤å‡½æ•°æˆ–è€…ä¿®æ”¹æ­¤å‡½æ•°
+ * ÏÖÔÚµÄÊµÏÖdlist_add_tailĞèÒªÁÙÊ±±äÁ¿£¬¼ÙÈçºóÃæÁ½¾äÎ»ÖÃ±ä»»ÁË£¬Ôòdlist_addĞèÒª´´½¨ÁÙÊ±±äÁ¿
+ * ¹Ê¶ÔdlistÎ´×ã¹»ÁË½â²»Òª³¢ÊÔµ÷ÓÃ´Ëº¯Êı»òÕßĞŞ¸Ä´Ëº¯Êı
  */
-#define __list_add(new_entry, prev_entry, next_entry) \
+#define __dlist_add(new_entry, prev_entry, next_entry) \
 do { \
     (next_entry)->prev = (new_entry); \
     (new_entry)->next = (next_entry); \
@@ -104,138 +104,138 @@ do { \
 } while (0)
 
 /**
- * å¤´æ’æ³•æ’å…¥æ–°entry
+ * Í·²å·¨²åÈëĞÂentry
  * @new_entry: new entry to be added
- * @head: å¤´entry
+ * @head: Í·entry
  */
-#define list_add(new_entry, head) \
-    __list_add((new_entry), (head), (head)->next);
+#define dlist_add(new_entry, head) \
+    __dlist_add((new_entry), (head), (head)->next);
 
 /**
- * å°¾æ’æ³•æ’å…¥æ–°entry
+ * Î²²å·¨²åÈëĞÂentry
  * @new_entry: new entry to be added
- * @head: list head to add it before
+ * @head: dlist head to add it before
  */
-#define list_add_tail(new_entry, head) \
+#define dlist_add_tail(new_entry, head) \
 do { \
-    struct list_head *prev = (head)->prev; \
-    __list_add((new_entry), prev, (head)); \
+    struct dlist_head *prev = (head)->prev; \
+    __dlist_add((new_entry), prev, (head)); \
 } while (0)
 
 /**
- * ä»é“¾è¡¨åˆ é™¤prev_entryå’Œnext_entryä¹‹é—´çš„entry
- * @prev_entry: éœ€è¦åˆ é™¤çš„entryçš„å‰é¢é‚£ä¸ªentry
- * @next_entry: éœ€è¦åˆ é™¤çš„entryçš„åé¢é‚£ä¸ªentry
+ * ´ÓÁ´±íÉ¾³ıprev_entryºÍnext_entryÖ®¼äµÄentry
+ * @prev_entry: ĞèÒªÉ¾³ıµÄentryµÄÇ°ÃæÄÇ¸öentry
+ * @next_entry: ĞèÒªÉ¾³ıµÄentryµÄºóÃæÄÇ¸öentry
  *
- * This is only for internal list manipulation where we know
+ * This is only for internal dlist manipulation where we know
  * the prev/next entries already!
  */
-#define __list_del(prev_entry, next_entry) \
+#define __dlist_del(prev_entry, next_entry) \
 do { \
     (next_entry)->prev = (prev_entry); \
     (prev_entry)->next = (next_entry); \
 } while (0)
 
 /**
- * åˆ é™¤ä¸€ä¸ªentry
- * @entry: è¦åˆ é™¤çš„entry
+ * É¾³ıÒ»¸öentry
+ * @entry: ÒªÉ¾³ıµÄentry
  *
- * Note: list_empty() on entry does not return true after this, the entry is
+ * Note: dlist_empty() on entry does not return true after this, the entry is
  * in an undefined state.
  */
-#define list_del(entry) \
+#define dlist_del(entry) \
 do { \
-    __list_del((entry)->prev, (entry)->next); \
-    (entry)->next = LIST_POISON1; \
-    (entry)->prev = LIST_POISON2; \
+    __dlist_del((entry)->prev, (entry)->next); \
+    (entry)->next = DLIST_POISON1; \
+    (entry)->prev = DLIST_POISON2; \
 } while (0)
 
 /**
- * åˆ¤æ–­æ˜¯å¦ä¸ºç©ºé“¾è¡¨ï¼Œç©ºé“¾è¡¨åªæœ‰å¤´ç»“ç‚¹
- * @head: the list to test.
+ * ÅĞ¶ÏÊÇ·ñÎª¿ÕÁ´±í£¬¿ÕÁ´±íÖ»ÓĞÍ·½áµã
+ * @head: the dlist to test.
  */
-#define list_empty(head) \
+#define dlist_empty(head) \
     ((head)->next == (head))
 
 /**
- * æ›´å°å¿ƒåœ°åˆ¤æ–­é“¾è¡¨æ˜¯å¦ä¸ºç©º
- * @head: the list to test
+ * ¸üĞ¡ĞÄµØÅĞ¶ÏÁ´±íÊÇ·ñÎª¿Õ
+ * @head: the dlist to test
  *
  * Description:
- * tests whether a list is empty _and_ checks that no other CPU might be
+ * tests whether a dlist is empty _and_ checks that no other CPU might be
  * in the process of modifying either member (next or prev)
  *
- * NOTE: using list_empty_careful() without synchronization
+ * NOTE: using dlist_empty_careful() without synchronization
  * can only be safe if the only activity that can happen
- * to the list entry is list_del_init(). Eg. it cannot be used
- * if another CPU could re-list_add() it.
+ * to the dlist entry is dlist_del_init(). Eg. it cannot be used
+ * if another CPU could re-dlist_add() it.
  */
-#define list_empty_careful(head) \
+#define dlist_empty_careful(head) \
     ((head)->next == (head)) && ((head)->next == (head)->prev)
 
 /**
- * è·å–åŒ…å«è¯¥entryçš„ç»“æ„ä½“æŒ‡é’ˆ
- * @entry:   åŒ…å«åœ¨ç»“æ„ä½“ä¸­çš„entry
- * @type:    è¦è·å–çš„ç»“æ„ä½“çš„ç±»å‹
- * @member:  entryåœ¨ç»“æ„ä½“ä¸­çš„æ ‡è¯†ç¬¦
+ * »ñÈ¡°üº¬¸ÃentryµÄ½á¹¹ÌåÖ¸Õë
+ * @entry:   °üº¬ÔÚ½á¹¹ÌåÖĞµÄentry
+ * @type:    Òª»ñÈ¡µÄ½á¹¹ÌåµÄÀàĞÍ
+ * @member:  entryÔÚ½á¹¹ÌåÖĞµÄ±êÊ¶·û
  *
  * old code: container_of(entry, type, member)
  */
-#define list_entry(entry, type, member) \
+#define dlist_entry(entry, type, member) \
     ((type *)((char *)(entry) - (unsigned long)(&((type *)0)->member)))
 
 /**
- * éå†é“¾è¡¨ï¼Œä¸å¯åœ¨éå†ä¸­ä¿®æ”¹é“¾è¡¨
- * @pos:    éå†ä¸­ä½œæ¸¸æ ‡çš„entry
- * @head:   the head of your list.
+ * ±éÀúÁ´±í£¬²»¿ÉÔÚ±éÀúÖĞĞŞ¸ÄÁ´±í
+ * @pos:    ±éÀúÖĞ×÷ÓÎ±êµÄentry
+ * @head:   the head of your dlist.
  */
-#define list_for_each(pos, head) \
+#define dlist_for_each(pos, head) \
     for ((pos) = (head)->next; (pos) != (head); (pos) = (pos)->next)
 
 /**
- * å®‰å…¨åœ°éå†é“¾è¡¨ï¼Œæ”¯æŒéå†ä¸­ä¿®æ”¹é“¾è¡¨
- * @pos:        the &struct list_head to use as a loop cursor.
- * @pos_tmp:    ä½œä¸ºä¸´æ—¶å­˜è´®ç©ºé—´çš„entryï¼Œæ€»ä¼šåœ¨poså‰é¢è¯•æ¢ä¸€æ­¥
- * @head:       the head for your list.
+ * °²È«µØ±éÀúÁ´±í£¬Ö§³Ö±éÀúÖĞĞŞ¸ÄÁ´±í
+ * @pos:        the &struct dlist_head to use as a loop cursor.
+ * @pos_tmp:    ×÷ÎªÁÙÊ±´æÖü¿Õ¼äµÄentry£¬×Ü»áÔÚposÇ°ÃæÊÔÌ½Ò»²½
+ * @head:       the head for your dlist.
  */
-#define list_for_each_safe(pos, pos_tmp, head) \
+#define dlist_for_each_safe(pos, pos_tmp, head) \
     for ((pos) = (head)->next, (pos_tmp) = (pos)->next; \
         (pos) != (head); \
         (pos) = (pos_tmp), (pos_tmp) = (pos)->next)
 
 /**
- * å¾ªç€é“¾è¡¨éå†èŠ‚ç‚¹ï¼Œä¸å¯åœ¨éå†ä¸­ä¿®æ”¹é“¾è¡¨
- * @pos:        åŒ…å«entryçš„èŠ‚ç‚¹ç»“æ„ï¼Œç”¨æ¥åšæ¸¸æ ‡èŠ‚ç‚¹
- * @head:       the head of your list.
- * @member:     åœ¨èŠ‚ç‚¹ç»“æ„ä¸­entryçš„æ ‡è¯†ç¬¦
+ * Ñ­×ÅÁ´±í±éÀú½Úµã£¬²»¿ÉÔÚ±éÀúÖĞĞŞ¸ÄÁ´±í
+ * @pos:        °üº¬entryµÄ½Úµã½á¹¹£¬ÓÃÀ´×öÓÎ±ê½Úµã
+ * @head:       the head of your dlist.
+ * @member:     ÔÚ½Úµã½á¹¹ÖĞentryµÄ±êÊ¶·û
  */
-#define list_for_each_entry(pos, head, type, member)  \
-    for ((pos) = list_entry((head)->next, type, member);  \
+#define dlist_for_each_entry(pos, head, type, member)  \
+    for ((pos) = dlist_entry((head)->next, type, member);  \
          &(pos)->member != (head); \
-         (pos) = list_entry((pos)->member.next, type, member))
+         (pos) = dlist_entry((pos)->member.next, type, member))
 
 /**
- * ä»¥å®‰å…¨çš„æ–¹å¼å¾ªç€é“¾è¡¨éå†èŠ‚ç‚¹ï¼Œæ”¯æŒéå†ä¸­ä¿®æ”¹é“¾è¡¨
+ * ÒÔ°²È«µÄ·½Ê½Ñ­×ÅÁ´±í±éÀú½Úµã£¬Ö§³Ö±éÀúÖĞĞŞ¸ÄÁ´±í
  * @pos:        the type * to use as a loop cursor.
- * @pos_tmp:       ä½œä¸ºä¸´æ—¶å­˜è´®ç©ºé—´çš„èŠ‚ç‚¹ï¼Œæ€»ä¼šåœ¨poså‰é¢è¯•æ¢ä¸€æ­¥
- * @head:       the head for your list.
- * @member:     the name of the list_struct within the struct.
+ * @pos_tmp:       ×÷ÎªÁÙÊ±´æÖü¿Õ¼äµÄ½Úµã£¬×Ü»áÔÚposÇ°ÃæÊÔÌ½Ò»²½
+ * @head:       the head for your dlist.
+ * @member:     the name of the dlist_struct within the struct.
  */
-#define list_for_each_entry_safe(pos, pos_tmp, head, type, member)     \
-    for ((pos) = list_entry((head)->next, type, member),    \
-        (pos_tmp) = list_entry((pos)->member.next, type, member); \
+#define dlist_for_each_entry_safe(pos, pos_tmp, head, type, member)     \
+    for ((pos) = dlist_entry((head)->next, type, member),    \
+        (pos_tmp) = dlist_entry((pos)->member.next, type, member); \
          &(pos)->member != (head);                     \
          (pos) = (pos_tmp), \
-         (pos_tmp) = list_entry((pos_tmp)->member.next, type, member))
+         (pos_tmp) = dlist_entry((pos_tmp)->member.next, type, member))
 
 /**
- * ç”¨æ–°çš„entryä»£æ›¿æ—§çš„entryåœ¨é“¾è¡¨ä¸­çš„ä½ç½®
+ * ÓÃĞÂµÄentry´úÌæ¾ÉµÄentryÔÚÁ´±íÖĞµÄÎ»ÖÃ
  * @old_entry : the element to be replaced
  * @new_entry : the new element to insert
  *
  * If @old was empty, it will be overwritten.
  */
-#define list_replace(old_entry, new_entry) \
+#define dlist_replace(old_entry, new_entry) \
 do { \
     (new_entry)->next = (old_entry)->next; \
     (new_entry)->next->prev = (new_entry); \
@@ -244,92 +244,92 @@ do { \
 } while (0)
 
 /**
- * ç”¨æ–°çš„entryä»£æ›¿æ—§çš„entryåœ¨é“¾è¡¨ä¸­çš„ä½ç½®ï¼Œå¹¶é‡æ–°åˆå§‹åŒ–æ—§çš„entry
+ * ÓÃĞÂµÄentry´úÌæ¾ÉµÄentryÔÚÁ´±íÖĞµÄÎ»ÖÃ£¬²¢ÖØĞÂ³õÊ¼»¯¾ÉµÄentry
  * @old_entry : the element to be replaced
  * @new_entry : the new element to insert
  *
  * If @old was empty, it will be overwritten.
  */
-#define list_replace_init(old_entry, new_entry) \
+#define dlist_replace_init(old_entry, new_entry) \
 do { \
-    list_replace((old_entry), (new_entry)); \
-    INIT_LIST_HEAD(old_entry); \
+    dlist_replace((old_entry), (new_entry)); \
+    INIT_DLIST_HEAD(old_entry); \
 } while (0)
 
 /**
- * åˆ é™¤entryå¹¶é‡æ–°åˆå§‹åŒ–å®ƒ
- * @entry: the element to delete from the list.
+ * É¾³ıentry²¢ÖØĞÂ³õÊ¼»¯Ëü
+ * @entry: the element to delete from the dlist.
  */
-#define list_del_init(entry) \
+#define dlist_del_init(entry) \
 do { \
-    __list_del((entry)->prev, (entry)->next); \
-    INIT_LIST_HEAD(entry); \
+    __dlist_del((entry)->prev, (entry)->next); \
+    INIT_DLIST_HEAD(entry); \
 } while (0)
 
 /**
- * æŠŠä¸€ä¸ªentryä»ä¸€ä¸ªé“¾è¡¨ä¸­åˆ é™¤ï¼Œå¹¶ç”¨å¤´æ’æ³•åŠ å…¥å¦ä¸€ä¸ªé“¾è¡¨
+ * °ÑÒ»¸öentry´ÓÒ»¸öÁ´±íÖĞÉ¾³ı£¬²¢ÓÃÍ·²å·¨¼ÓÈëÁíÒ»¸öÁ´±í
  * @entry:  the entry to move
  * @head:   the head that will precede our entry
  */
-#define list_move(entry, head) \
+#define dlist_move(entry, head) \
 do { \
-    __list_del((entry)->prev, (entry)->next); \
-    list_add((entry), (head)); \
+    __dlist_del((entry)->prev, (entry)->next); \
+    dlist_add((entry), (head)); \
 } while (0)
 
 /**
- * æŠŠä¸€ä¸ªentryä»ä¸€ä¸ªé“¾è¡¨ä¸­åˆ é™¤ï¼Œå¹¶ç”¨å°¾æ’æ³•åŠ å…¥å¦ä¸€ä¸ªé“¾è¡¨
- * @list: the entry to move
+ * °ÑÒ»¸öentry´ÓÒ»¸öÁ´±íÖĞÉ¾³ı£¬²¢ÓÃÎ²²å·¨¼ÓÈëÁíÒ»¸öÁ´±í
+ * @dlist: the entry to move
  * @head: the head that will follow our entry
  */
-#define list_move_tail(entry, head) \
+#define dlist_move_tail(entry, head) \
 do { \
-    __list_del((entry)->prev, (entry)->next); \
-    list_add_tail((entry), (head)); \
+    __dlist_del((entry)->prev, (entry)->next); \
+    dlist_add_tail((entry), (head)); \
 } while (0)
 
 /**
- * åˆ¤æ–­ä¸€ä¸ªentryæ˜¯å¦æ˜¯è¡¨å°¾
+ * ÅĞ¶ÏÒ»¸öentryÊÇ·ñÊÇ±íÎ²
  * @entry: the entry to test
- * @head: the head of the list
+ * @head: the head of the dlist
  */
-#define list_is_last(entry, head) \
+#define dlist_is_last(entry, head) \
     ((entry)->next == head)
 
 /**
- * è·å–é“¾è¡¨çš„ç¬¬ä¸€ä¸ªèŠ‚ç‚¹
- * @head:    the list head to take the element from.
+ * »ñÈ¡Á´±íµÄµÚÒ»¸ö½Úµã
+ * @head:    the dlist head to take the element from.
  * @type:    the type of the struct this is embedded in.
- * @member:  the name of the list_struct within the struct.
+ * @member:  the name of the dlist_struct within the struct.
  */
-#define list_first_entry(head, type, member) \
-    (list_empty(head) ? NULL : list_entry((head)->next, type, member))
+#define dlist_first_entry(head, type, member) \
+    (dlist_empty(head) ? NULL : dlist_entry((head)->next, type, member))
 
 /**
- * è·å–é“¾è¡¨çš„æœ€åä¸€ä¸ªèŠ‚ç‚¹
- * @head:    the list head to take the element from.
+ * »ñÈ¡Á´±íµÄ×îºóÒ»¸ö½Úµã
+ * @head:    the dlist head to take the element from.
  * @type:    the type of the struct this is embedded in.
- * @member:  the name of the list_struct within the struct.
+ * @member:  the name of the dlist_struct within the struct.
  */
-#define list_last_entry(head, type, member) \
-    (list_empty(head) ? NULL : list_entry((head)->prev, type, member))
+#define dlist_last_entry(head, type, member) \
+    (dlist_empty(head) ? NULL : dlist_entry((head)->prev, type, member))
 
 /**
- * åˆ¤æ–­é“¾è¡¨æ˜¯å¦åªæœ‰ä¸€ä¸ªentry
- * @head: the list to test.
+ * ÅĞ¶ÏÁ´±íÊÇ·ñÖ»ÓĞÒ»¸öentry
+ * @head: the dlist to test.
  */
-#define list_is_singular(head) \
-    (!list_empty(head) && ((head)->next == (head)->prev))
+#define dlist_is_singular(head) \
+    (!dlist_empty(head) && ((head)->next == (head)->prev))
 
 /**
- * æŠŠåŸå…ˆheadé“¾è¡¨ä¸­çš„ç¬¬ä¸€ä¸ªentryåˆ°å…¥å‚entryä¹‹é—´çš„entryç§»åŠ¨åˆ°new_headé“¾è¡¨
- * @head:       åŸé“¾è¡¨
- * @entry:      éœ€è¦è¢«ç æ‰çš„æœ€åä¸€ä¸ªentryï¼Œåº”æ˜¯headé“¾è¡¨ä¸­çš„ä¸€ä¸ªentry
- * @new_head:   æ¥æ”¶è¢«ç æ‰çš„entryçš„é“¾è¡¨ï¼Œåº”è¯¥æ˜¯ä¸€ä¸ªç©ºé“¾è¡¨ï¼Œå¦åˆ™é“¾è¡¨æ•°æ®ä¸¢å¤±å‡ºé”™
+ * °ÑÔ­ÏÈheadÁ´±íÖĞµÄµÚÒ»¸öentryµ½Èë²ÎentryÖ®¼äµÄentryÒÆ¶¯µ½new_headÁ´±í
+ * @head:       Ô­Á´±í
+ * @entry:      ĞèÒª±»¿³µôµÄ×îºóÒ»¸öentry£¬Ó¦ÊÇheadÁ´±íÖĞµÄÒ»¸öentry
+ * @new_head:   ½ÓÊÕ±»¿³µôµÄentryµÄÁ´±í£¬Ó¦¸ÃÊÇÒ»¸ö¿ÕÁ´±í£¬·ñÔòÁ´±íÊı¾İ¶ªÊ§³ö´í
  */
-#define __list_cut_position(new_head, head, entry) \
+#define __dlist_cut_position(new_head, head, entry) \
 do { \
-    struct list_head *new_first = entry->next; \
+    struct dlist_head *new_first = entry->next; \
     (new_head)->next = (head)->next; \
     (new_head)->next->prev = (new_head); \
     (new_head)->prev = (entry); \
@@ -339,42 +339,42 @@ do { \
 } while (0)
 
 /**
- * æŠŠè¡¨åˆ†è§£æˆä¸¤ä¸ªè¡¨ï¼ŒæŠŠåŸå…ˆheadé“¾è¡¨ä¸­çš„ç¬¬ä¸€ä¸ªentryåˆ°å…¥å‚entryä¹‹é—´çš„entryç§»åŠ¨åˆ°new_headé“¾è¡¨
- * @new_head:   a new list to add all removed entries
- * @head:       a list with entries
+ * °Ñ±í·Ö½â³ÉÁ½¸ö±í£¬°ÑÔ­ÏÈheadÁ´±íÖĞµÄµÚÒ»¸öentryµ½Èë²ÎentryÖ®¼äµÄentryÒÆ¶¯µ½new_headÁ´±í
+ * @new_head:   a new dlist to add all removed entries
+ * @head:       a dlist with entries
  * @entry:      an entry within head, could be the head itself
- *    and if so we won't cut the list
+ *    and if so we won't cut the dlist
  *
  * This helper moves the initial part of @head, up to and
- * including @entry, from @head to @list. You should
- * pass on @entry an element you know is on @head. @list
- * should be an empty list or a list you do not care about
+ * including @entry, from @head to @dlist. You should
+ * pass on @entry an element you know is on @head. @dlist
+ * should be an empty dlist or a dlist you do not care about
  * losing its data.
  */
-#define list_cut_position(new_head, head, entry) \
+#define dlist_cut_position(new_head, head, entry) \
 do { \
-    if (list_empty(head)) { \
+    if (dlist_empty(head)) { \
         /* retrun here */ \
-    } else if (list_is_singular(head) && ((head)->next != (entry) && (head) != (entry))) { \
+    } else if (dlist_is_singular(head) && ((head)->next != (entry) && (head) != (entry))) { \
         /* retrun here */ \
     } else if ((entry) == (head)) { \
-        INIT_LIST_HEAD(new_head); \
+        INIT_DLIST_HEAD(new_head); \
     } else { \
-        __list_cut_position((new_head), (head), (entry)); \
+        __dlist_cut_position((new_head), (head), (entry)); \
     } \
 } while (0)
 
 /**
- * è¿æ¥ä¸¤ä¸ªé“¾è¡¨ï¼Œä¸€ä¸ªé“¾è¡¨æ’åˆ°å¦ä¸€ä¸ªé“¾è¡¨çš„head_prevå’Œhead_nextä¹‹é—´
- * @new_head:   éœ€è¦æ’å…¥çš„é“¾è¡¨
- * @head_prev:  æ¥æ”¶æ–°é“¾è¡¨çš„ä½ç½®å‰ä¸€ä¸ªentry
- * @head_next:  æ¥æ”¶æ–°é“¾è¡¨çš„ä½ç½®åä¸€ä¸ªentry
+ * Á¬½ÓÁ½¸öÁ´±í£¬Ò»¸öÁ´±í²åµ½ÁíÒ»¸öÁ´±íµÄhead_prevºÍhead_nextÖ®¼ä
+ * @new_head:   ĞèÒª²åÈëµÄÁ´±í
+ * @head_prev:  ½ÓÊÕĞÂÁ´±íµÄÎ»ÖÃÇ°Ò»¸öentry
+ * @head_next:  ½ÓÊÕĞÂÁ´±íµÄÎ»ÖÃºóÒ»¸öentry
  */
-#define __list_splice(new_head, head_prev, head_next_) \
+#define __dlist_splice(new_head, head_prev, head_next_) \
 do { \
-    struct list_head *first = (new_head)->next; \
-    struct list_head *last = (new_head)->prev; \
-    struct list_head *head_next = head_next_; \
+    struct dlist_head *first = (new_head)->next; \
+    struct dlist_head *last = (new_head)->prev; \
+    struct dlist_head *head_next = head_next_; \
     first->prev = (head_prev); \
     (head_prev)->next = first; \
     last->next = (head_next); \
@@ -382,213 +382,213 @@ do { \
 } while (0)
 
 /**
- * åˆå¹¶ä¸¤ä¸ªé“¾è¡¨ï¼Œä¸€ä¸ªé“¾è¡¨æ’åˆ°å¦ä¸€ä¸ªé“¾è¡¨çš„å¤´éƒ¨
- * @new_head:   éœ€è¦æ’å…¥çš„é“¾è¡¨
- * @head:       è¢«æ’å…¥çš„é“¾è¡¨ï¼Œå°†å½¢æˆæ–°çš„æ›´é•¿çš„é“¾è¡¨
+ * ºÏ²¢Á½¸öÁ´±í£¬Ò»¸öÁ´±í²åµ½ÁíÒ»¸öÁ´±íµÄÍ·²¿
+ * @new_head:   ĞèÒª²åÈëµÄÁ´±í
+ * @head:       ±»²åÈëµÄÁ´±í£¬½«ĞÎ³ÉĞÂµÄ¸ü³¤µÄÁ´±í
  */
-#define list_splice(new_head, head) \
+#define dlist_splice(new_head, head) \
 do { \
-    if (!list_empty(new_head)) { \
-        __list_splice((new_head), (head), head_next); \
+    if (!dlist_empty(new_head)) { \
+        __dlist_splice((new_head), (head), head_next); \
     } \
 } while (0)
 
 /**
- * è¿æ¥ä¸¤ä¸ªé“¾è¡¨ï¼Œä¸€ä¸ªé“¾è¡¨æ’åˆ°å¦ä¸€ä¸ªé“¾è¡¨çš„å°¾éƒ¨
- * @new_head:   the new list to add.
- * @head:       the place to add it in the first list.
+ * Á¬½ÓÁ½¸öÁ´±í£¬Ò»¸öÁ´±í²åµ½ÁíÒ»¸öÁ´±íµÄÎ²²¿
+ * @new_head:   the new dlist to add.
+ * @head:       the place to add it in the first dlist.
  */
-#define list_splice_tail(new_head, head) \
+#define dlist_splice_tail(new_head, head) \
 do { \
-    if (!list_empty(new_head)) { \
-        __list_splice((new_head), (head)->prev, (head)); \
+    if (!dlist_empty(new_head)) { \
+        __dlist_splice((new_head), (head)->prev, (head)); \
     } \
 } while (0)
 
 /**
- * å¤´æ’æ³•è¿æ¥ä¸¤ä¸ªé“¾è¡¨ï¼Œå¹¶é‡æ–°åˆå§‹åŒ–å˜ç©ºçš„é“¾è¡¨
- * @new_head:   the new list to add.
- * @head:       the place to add it in the first list.
+ * Í·²å·¨Á¬½ÓÁ½¸öÁ´±í£¬²¢ÖØĞÂ³õÊ¼»¯±ä¿ÕµÄÁ´±í
+ * @new_head:   the new dlist to add.
+ * @head:       the place to add it in the first dlist.
  *
- * The list at @list is reinitialised
+ * The dlist at @dlist is reinitialised
  */
-#define list_splice_init(new_head, head) \
+#define dlist_splice_init(new_head, head) \
 do { \
-    if (!list_empty(new_head)) { \
-        __list_splice((new_head), head, (head)->next); \
-        INIT_LIST_HEAD(new_head); \
+    if (!dlist_empty(new_head)) { \
+        __dlist_splice((new_head), head, (head)->next); \
+        INIT_DLIST_HEAD(new_head); \
     } \
 } while (0)
 
 /**
- * å°¾æ’æ³•è¿æ¥ä¸¤ä¸ªé“¾è¡¨ï¼Œå¹¶é‡æ–°åˆå§‹åŒ–å˜ç©ºçš„é“¾è¡¨
- * @list:       the new list to add.
- * @head:       the place to add it in the first list.
+ * Î²²å·¨Á¬½ÓÁ½¸öÁ´±í£¬²¢ÖØĞÂ³õÊ¼»¯±ä¿ÕµÄÁ´±í
+ * @dlist:       the new dlist to add.
+ * @head:       the place to add it in the first dlist.
  *
- * Each of the lists is a queue.
- * The list at @list is reinitialised
+ * Each of the dlists is a queue.
+ * The dlist at @dlist is reinitialised
  */
-#define list_splice_tail_init(new_head, head) \
+#define dlist_splice_tail_init(new_head, head) \
 do { \
-    if (!list_empty(new_head)) { \
-        __list_splice((new_head), (head)->prev, head); \
-        INIT_LIST_HEAD(new_head); \
+    if (!dlist_empty(new_head)) { \
+        __dlist_splice((new_head), (head)->prev, head); \
+        INIT_DLIST_HEAD(new_head); \
     } \
 } while (0)
 
 /**
- * éå†é“¾è¡¨ï¼Œä¸å¯åœ¨éå†ä¸­ä¿®æ”¹é“¾è¡¨
- * @pos:        the &struct list_head to use as a loop cursor.
- * @head:       the head for your list.
+ * ±éÀúÁ´±í£¬²»¿ÉÔÚ±éÀúÖĞĞŞ¸ÄÁ´±í
+ * @pos:        the &struct dlist_head to use as a loop cursor.
+ * @head:       the head for your dlist.
  *
- * This variant differs from list_for_each() in that it's the
- * simplest possible list iteration code, no prefetching is done.
- * Use this for code that knows the list to be very short (empty
+ * This variant differs from dlist_for_each() in that it's the
+ * simplest possible dlist iteration code, no prefetching is done.
+ * Use this for code that knows the dlist to be very short (empty
  * or 1 entry) most of the time.
  *
- * æ­¤æ–‡æ¡£ä¸­ä¸å‰é¢çš„__list_for_each()å®Œå…¨ä¸€æ ·ï¼Œä»…ä¸ºä¿ç•™æ¥å£
+ * ´ËÎÄµµÖĞÓëÇ°ÃæµÄ__dlist_for_each()ÍêÈ«Ò»Ñù£¬½öÎª±£Áô½Ó¿Ú
  */
-#define __list_for_each(pos, head) \
+#define __dlist_for_each(pos, head) \
     for ((pos) = (head)->next; (pos) != (head); (pos) = (pos)->next)
 
 /**
- * åå‘éå†é“¾è¡¨ï¼Œä¸å¯éå†ä¸­ä¿®æ”¹é“¾è¡¨
- * @pos:        the &struct list_head to use as a loop cursor.
- * @head:       the head for your list.
+ * ·´Ïò±éÀúÁ´±í£¬²»¿É±éÀúÖĞĞŞ¸ÄÁ´±í
+ * @pos:        the &struct dlist_head to use as a loop cursor.
+ * @head:       the head for your dlist.
  */
-#define list_for_each_prev(pos, head) \
+#define dlist_for_each_prev(pos, head) \
     for ((pos) = (head)->prev; (pos) != (head); (pos) = (pos)->prev)
 
 /**
- * å®‰å…¨åœ°åå‘éå†é“¾è¡¨ï¼Œæ”¯æŒéå†ä¸­ä¿®æ”¹é“¾è¡¨
- * @pos:        the &struct list_head to use as a loop cursor.
- * @pos_tmp:    another &struct list_head to use as temporary storage
- * @head:       the head for your list.
+ * °²È«µØ·´Ïò±éÀúÁ´±í£¬Ö§³Ö±éÀúÖĞĞŞ¸ÄÁ´±í
+ * @pos:        the &struct dlist_head to use as a loop cursor.
+ * @pos_tmp:    another &struct dlist_head to use as temporary storage
+ * @head:       the head for your dlist.
  */
-#define list_for_each_prev_safe(pos, pos_tmp, head) \
+#define dlist_for_each_prev_safe(pos, pos_tmp, head) \
     for ((pos) = (head)->prev, (pos_tmp) = (pos)->prev; \
          (pos) != (head); \
          (pos) = (pos_tmp), (pos_tmp) = (pos)->prev)
 
 /**
- * å¾ªç€é“¾è¡¨åå‘éå†èŠ‚ç‚¹ï¼Œä¸å¯åœ¨éå†ä¸­ä¿®æ”¹é“¾è¡¨
+ * Ñ­×ÅÁ´±í·´Ïò±éÀú½Úµã£¬²»¿ÉÔÚ±éÀúÖĞĞŞ¸ÄÁ´±í
  * @pos:    the type * to use as a loop cursor.
- * @head:   the head for your list.
+ * @head:   the head for your dlist.
  * @type:   the type of pos
- * @member: the name of the list_struct within the struct.
+ * @member: the name of the dlist_struct within the struct.
  */
-#define list_for_each_entry_reverse(pos, head, type, member)  \
-    for ((pos) = list_entry((head)->prev, type, member); \
+#define dlist_for_each_entry_reverse(pos, head, type, member)  \
+    for ((pos) = dlist_entry((head)->prev, type, member); \
          &(pos)->member != (head);  \
-         (pos) = list_entry((pos)->member.prev, type, member))
+         (pos) = dlist_entry((pos)->member.prev, type, member))
 
 /**
- * å‡†å¤‡ä¸€ä¸ªèŠ‚ç‚¹ï¼Œå¯ä½œä¸ºlist_for_each_entry_continueç­‰å‡½æ•°çš„å…¥å‚pos
+ * ×¼±¸Ò»¸ö½Úµã£¬¿É×÷Îªdlist_for_each_entry_continueµÈº¯ÊıµÄÈë²Îpos
  * @pos:    the type * to use as a start point
- * @head:   the head of the list
+ * @head:   the head of the dlist
  * @type:   the type of pos
- * @member: the name of the list_struct within the struct.
+ * @member: the name of the dlist_struct within the struct.
  *
- * Prepares a pos entry for use as a start point in list_for_each_entry_continue().
+ * Prepares a pos entry for use as a start point in dlist_for_each_entry_continue().
  */
-#define list_prepare_entry(pos, head, type, member) \
-    ((pos) ? (pos) : list_entry((head), type, member))
+#define dlist_prepare_entry(pos, head, type, member) \
+    ((pos) ? (pos) : dlist_entry((head), type, member))
 
 /**
- * æŠŠposä½œä¸ºå¤´ç»“ç‚¹ç»§ç»­éå†é“¾è¡¨èŠ‚ç‚¹ï¼Œå³ä»posçš„ä¸‹ä¸€ä¸ªä½ç½®å¼€å§‹éå†
+ * °Ñpos×÷ÎªÍ·½áµã¼ÌĞø±éÀúÁ´±í½Úµã£¬¼´´ÓposµÄÏÂÒ»¸öÎ»ÖÃ¿ªÊ¼±éÀú
  * @pos:    the type * to use as a loop cursor.
- * @head:   the head for your list.
+ * @head:   the head for your dlist.
  * @type:   the type of pos
- * @member: the name of the list_struct within the struct.
+ * @member: the name of the dlist_struct within the struct.
  *
- * Continue to iterate over list of given type, continuing after
+ * Continue to iterate over dlist of given type, continuing after
  * the current position.
  */
-#define list_for_each_entry_continue(pos, head, type, member) \
-    for ((pos) = list_entry((pos)->member.next, type, member); \
+#define dlist_for_each_entry_continue(pos, head, type, member) \
+    for ((pos) = dlist_entry((pos)->member.next, type, member); \
          &(pos)->member != (head); \
-         (pos) = list_entry((pos)->member.next, type, member))
+         (pos) = dlist_entry((pos)->member.next, type, member))
 
 /**
- * æŠŠposä½œä¸ºå¤´ç»“ç‚¹ç»§ç»­åå‘éå†é“¾è¡¨èŠ‚ç‚¹
+ * °Ñpos×÷ÎªÍ·½áµã¼ÌĞø·´Ïò±éÀúÁ´±í½Úµã
  * @pos:        the type * to use as a loop cursor.
- * @head:       the head for your list.
+ * @head:       the head for your dlist.
  * @type:       the type of pos
- * @member:     the name of the list_struct within the struct.
+ * @member:     the name of the dlist_struct within the struct.
  *
- * Start to iterate over list of given type backwards, continuing after
+ * Start to iterate over dlist of given type backwards, continuing after
  * the current position.
  */
-#define list_for_each_entry_continue_reverse(pos, head, type, member)        \
-    for ((pos) = list_entry((pos)->member.prev, type, member);    \
+#define dlist_for_each_entry_continue_reverse(pos, head, type, member)        \
+    for ((pos) = dlist_entry((pos)->member.prev, type, member);    \
          &(pos)->member != (head);    \
-         (pos) = list_entry((pos)->member.prev, type, member))
+         (pos) = dlist_entry((pos)->member.prev, type, member))
 
 /**
- * ä»posä½ç½®èµ·ç»§ç»­éå†èŠ‚ç‚¹
+ * ´ÓposÎ»ÖÃÆğ¼ÌĞø±éÀú½Úµã
  * @pos:        the type * to use as a loop cursor.
- * @head:       the head for your list.
+ * @head:       the head for your dlist.
  @ @type:       the type of pos
- * @member:     the name of the list_struct within the struct.
+ * @member:     the name of the dlist_struct within the struct.
  *
- * Iterate over list of given type, continuing from current position.
+ * Iterate over dlist of given type, continuing from current position.
  */
-#define list_for_each_entry_from(pos, head, type, member)             \
+#define dlist_for_each_entry_from(pos, head, type, member)             \
     for (; &(pos)->member != (head);    \
-         (pos) = list_entry((pos)->member.next, type, member))
+         (pos) = dlist_entry((pos)->member.next, type, member))
 
 /**
- * æŠŠposä½œä¸ºå¤´ç»“ç‚¹ä»¥å®‰å…¨çš„æ–¹å¼ç»§ç»­éå†é“¾è¡¨èŠ‚ç‚¹ï¼Œå³ä»posçš„ä¸‹ä¸€ä¸ªä½ç½®å¼€å§‹éå†
+ * °Ñpos×÷ÎªÍ·½áµãÒÔ°²È«µÄ·½Ê½¼ÌĞø±éÀúÁ´±í½Úµã£¬¼´´ÓposµÄÏÂÒ»¸öÎ»ÖÃ¿ªÊ¼±éÀú
  * @pos:        the type * to use as a loop cursor.
  * @pos_tmp:    another type * to use as temporary storage
- * @head:       the head for your list.
+ * @head:       the head for your dlist.
  * @type:       the type of pos
- * @member:     the name of the list_struct within the struct.
+ * @member:     the name of the dlist_struct within the struct.
  *
- * Iterate over list of given type, continuing after current point,
- * safe against removal of list entry.
+ * Iterate over dlist of given type, continuing after current point,
+ * safe against removal of dlist entry.
  */
-#define list_for_each_entry_safe_continue(pos, pos_tmp, head, type, member)     \
-    for ((pos) = list_entry((pos)->member.next, type, member),         \
-        (pos_tmp) = list_entry((pos)->member.next, type, member);        \
+#define dlist_for_each_entry_safe_continue(pos, pos_tmp, head, type, member)     \
+    for ((pos) = dlist_entry((pos)->member.next, type, member),         \
+        (pos_tmp) = dlist_entry((pos)->member.next, type, member);        \
          &(pos)->member != (head);  \
          (pos) = (pos_tmp), \
-         (pos_tmp) = list_entry((pos_tmp)->member.next, type, member))
+         (pos_tmp) = dlist_entry((pos_tmp)->member.next, type, member))
 
 /**
- * ä»posä½ç½®èµ·ä»¥å®‰å…¨çš„æ–¹å¼ç»§ç»­éå†èŠ‚ç‚¹
+ * ´ÓposÎ»ÖÃÆğÒÔ°²È«µÄ·½Ê½¼ÌĞø±éÀú½Úµã
  * @pos:        the type * to use as a loop cursor.
  * @pos_tmp:    another type * to use as temporary storage
- * @head:       the head for your list.
+ * @head:       the head for your dlist.
  * @type:       the type of pos
- * @member:     the name of the list_struct within the struct.
+ * @member:     the name of the dlist_struct within the struct.
  *
- * Iterate over list of given type from current point, safe against
- * removal of list entry.
+ * Iterate over dlist of given type from current point, safe against
+ * removal of dlist entry.
  */
-#define list_for_each_entry_safe_from(pos, pos_tmp, head, type, member)             \
-    for ((pos_tmp) = list_entry((pos)->member.next, type, member);        \
+#define dlist_for_each_entry_safe_from(pos, pos_tmp, head, type, member)             \
+    for ((pos_tmp) = dlist_entry((pos)->member.next, type, member);        \
          &(pos)->member != (head);   \
          (pos) = (pos_tmp), \
-         (pos_tmp) = list_entry((pos_tmp)->member.next, type, member))
+         (pos_tmp) = dlist_entry((pos_tmp)->member.next, type, member))
 
 /**
- * ä»¥å®‰å…¨çš„æ–¹å¼åå‘éå†èŠ‚ç‚¹
+ * ÒÔ°²È«µÄ·½Ê½·´Ïò±éÀú½Úµã
  * @pos:        the type * to use as a loop cursor.
  * @pos_tmp:    another type * to use as temporary storage
- * @head:       the head for your list.
+ * @head:       the head for your dlist.
  * @type:       the type of pos
- * @member:     the name of the list_struct within the struct.
+ * @member:     the name of the dlist_struct within the struct.
  *
- * Iterate backwards over list of given type, safe against removal
- * of list entry.
+ * Iterate backwards over dlist of given type, safe against removal
+ * of dlist entry.
  */
-#define list_for_each_entry_safe_reverse(pos, pos_tmp, head, type, member)        \
-    for ((pos) = list_entry((head)->prev, type, member),    \
-        (pos_tmp) = list_entry((pos)->member.prev, type, member);    \
+#define dlist_for_each_entry_safe_reverse(pos, pos_tmp, head, type, member)        \
+    for ((pos) = dlist_entry((head)->prev, type, member),    \
+        (pos_tmp) = dlist_entry((pos)->member.prev, type, member);    \
          &(pos)->member != (head);                     \
          (pos) = (pos_tmp), \
-         (pos_tmp) = list_entry((pos_tmp)->member.prev, type, member))
+         (pos_tmp) = dlist_entry((pos_tmp)->member.prev, type, member))
 
-#endif /* _LINUX_LIST_H_ */
+#endif /* _LINUX_DLIST_H_ */
 

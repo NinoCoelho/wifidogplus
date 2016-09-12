@@ -14,7 +14,7 @@
 #include "list.h"
 
 typedef struct client_record_queue_node_s {
-    list_head_t     list;
+    dlist_head_t    dlist;
     char            mac[MAC_ADDR_LEN];
     time_t          assoc_time;
 } client_record_queue_node_t;

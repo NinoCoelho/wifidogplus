@@ -309,6 +309,7 @@ http_callback_auth(httpd *webserver, request *r)
     time_t  current_time;
     client_t client;
 	httpVar *logout = httpdGetVariableByName(r, "logout");
+    httpVar *account = httpdGetVariableByName(r, "account");
     char tmp_url[MAX_BUF] = {0};
     char *url = NULL;
 
@@ -353,6 +354,9 @@ http_callback_auth(httpd *webserver, request *r)
             }
 
             (void)iptables_fw_tracked_mac(mac);
+            if (account && account->value) {
+                (void)client_list_set_account(mac, account->value);
+            }
 
 			if (logout) {
 			    t_authresponse  authresponse;
@@ -1341,20 +1345,20 @@ void http_callback_shumo(httpd * webserver,request * r)
 	if(httpvar = httpdGetVariableByName(r, "allow")){
 	    memcpy(allow, httpvar->value, strlen(httpvar->value));
 	}
-	
+
 	if(httpvar = httpdGetVariableByName(r, "duration")){
 	    memcpy(duration, httpvar->value, strlen(httpvar->value));
 	}
-	
+
 	if(httpvar = httpdGetVariableByName(r, "redirect")){
 	    memcpy(redirect_url, httpvar->value, strlen(httpvar->value));
-	}	
+	}
 	current_time = time(NULL);
-	
+
 	debug(LOG_INFO, "CLIENT MAC ADDRES %s", r->clientAddr);
-	
+
 	mac = arp_get(r->clientAddr);
-	
+
     /* allow the iphones */
     if (strlen(allow) && (atoi(allow) == 1)) {
         (void)client_list_set_auth(mac, CLIENT_CHAOS);
@@ -1374,7 +1378,7 @@ void http_callback_shumo(httpd * webserver,request * r)
 	careful_free(mac);
 
 }
-	
+
 void http_callback_appdl(httpd *webserver, request *r)
 {
     time_t  current_time;

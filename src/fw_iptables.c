@@ -380,29 +380,27 @@ iptables_fw_init(void)
 	t_trusted_mac *p;
 	int proxy_port;
 	fw_quiet = 0;
+    char *wan_ip;
 
 	LOCK_CONFIG();
 	config = config_get_config();
 	gw_port = config->gw_port;
-    if (!strncasecmp(DEFAULT_EXTERNAL_INTERFACE, config->external_interface, strlen(DEFAULT_EXTERNAL_INTERFACE) + 1)) {
+    if ((wan_ip = get_iface_ip(config->external_interface)) == NULL) {
 		ext_interface = get_ext_iface();
-        if (ext_interface && strncasecmp(DEFAULT_EXTERNAL_INTERFACE, config->external_interface, strlen(DEFAULT_EXTERNAL_INTERFACE) + 1)) {
+        if (ext_interface && strncasecmp(ext_interface, config->external_interface, strlen(ext_interface) + 1)) {
             careful_free(config->external_interface);
             config->external_interface = safe_strdup(ext_interface);
             (void)uci_set_config("wifidog", "wifidog", "gateway_eninterface", ext_interface);
         }
+        if ((wan_ip = get_iface_ip(config->external_interface)) != NULL) {
+            careful_free(config->extip);
+            config->extip = safe_strdup(wan_ip);
+	    }
+	} else {
+	    careful_free(config->extip);
+        config->extip = safe_strdup(wan_ip);
 	}
-	if (ext_interface == NULL) {
-        if (DEFAULT_EXTERNAL_INTERFACE) {
-            careful_free(ext_interface);
-            ext_interface = safe_strdup(DEFAULT_EXTERNAL_INTERFACE);
-        }
-        if (ext_interface == NULL) {
-            UNLOCK_CONFIG();
-            debug(LOG_ERR, "FATAL: no external interface");
-            return 0;
-        }
-	}
+    careful_free(wan_ip);
 
 	/*
 	 *

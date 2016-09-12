@@ -178,25 +178,31 @@ ping(void)
         return;
     }
 
-    char *wan_ip;
-    if ((wan_ip = get_iface_ip(config->external_interface)) == NULL) {
-        char * ext_interface = NULL;
-        ext_interface = get_ext_iface();
-        if (ext_interface) {
-            LOCK_CONFIG();
-            careful_free(config->external_interface);
-            config->external_interface = safe_strdup(ext_interface);
-            UNLOCK_CONFIG();
+    if (!config->extip) {
+        char *wan_ip = NULL;
+        if ((wan_ip = get_iface_ip(config->external_interface)) == NULL) {
+            char * ext_interface = NULL;
+            ext_interface = get_ext_iface();
+            if (ext_interface) {
+                LOCK_CONFIG();
+                careful_free(config->external_interface);
+                config->external_interface = safe_strdup(ext_interface);
+                UNLOCK_CONFIG();
 #ifdef __OPENWRT__
-            (void)uci_set_config("wifidog", "wifidog", "gateway_eninterface", ext_interface);
+                (void)uci_set_config("wifidog", "wifidog", "gateway_eninterface", ext_interface);
 #endif
 #ifdef __MTK_SDK__
-            (void)bl_set_config("wd_gateway_eninterface", ext_interface);
+                (void)bl_set_config("wd_gateway_eninterface", ext_interface);
 #endif
-        }
-        careful_free(ext_interface);
-        return; /* connitnue next time */
-	}
+            }
+            careful_free(ext_interface);
+            return; /* connitnue next time */
+    	} else {
+    	    careful_free(config->extip);
+            config->extip = safe_strdup(wan_ip);
+    	}
+        careful_free(wan_ip);
+    }
 
 	char client_count[16]={0};
     if(getInterface_cmd(client_count, "cat /proc/net/arp | grep %s | awk  '{if($3==0x2) print $3}' | wc -l", config->gw_interface)){
@@ -242,7 +248,7 @@ ping(void)
 			sys_idle,
 			(long unsigned int)((long unsigned int)time(NULL) - (long unsigned int)started_time),
 			gw_mac,
-			wan_ip,
+			config->extip,
 			client_count,
 			gw_address,
 			info.model,
@@ -256,7 +262,6 @@ ping(void)
 	send(sockfd, request, strlen(request), 0);
 
     careful_free(gw_mac);
-    careful_free(wan_ip);
     careful_free(gw_address);
 
 	debug(LOG_DEBUG, "Reading response");

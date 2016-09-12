@@ -41,12 +41,12 @@
 
 
 typedef struct mac_node_s {
-    list_head_t     list;
+    dlist_head_t    dlist;
     char            mac[MAC_ADDR_LEN];
 } mac_node_t;
 
 
-static LIST_HEAD(client_access_queue);
+static DLIST_HEAD(client_access_queue);
 static pthread_mutex_t client_access_queue_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 
@@ -62,8 +62,8 @@ void client_access_queue_destory()
     mac_node_t      *pos_tmp;
 
     pthread_mutex_lock(&client_access_queue_mutex);
-    list_for_each_entry_safe(pos, pos_tmp, &client_access_queue, mac_node_t, list) {
-        list_del(&pos->list);
+    dlist_for_each_entry_safe(pos, pos_tmp, &client_access_queue, mac_node_t, dlist) {
+        dlist_del(&pos->dlist);
         careful_free(pos);
     }
     pthread_mutex_unlock(&client_access_queue_mutex);
@@ -76,7 +76,7 @@ static mac_node_t *client_access_queue_find(char *mac)
 {
     mac_node_t      *pos;
 
-    list_for_each_entry(pos, &client_access_queue, mac_node_t, list) {
+    dlist_for_each_entry(pos, &client_access_queue, mac_node_t, dlist) {
         if (!strncasecmp(mac, pos->mac, MAC_ADDR_LEN)) {
             return pos;
         }
@@ -108,7 +108,7 @@ int client_access_queue_enqueue(char *mac)
 
     memset(new_node, 0, sizeof(mac_node_t));
     memcpy(new_node->mac, mac, MAC_ADDR_LEN);
-    list_add_tail(&new_node->list, &client_access_queue);
+    dlist_add_tail(&new_node->dlist, &client_access_queue);
     pthread_mutex_unlock(&client_access_queue_mutex);
 
     return 0;
@@ -123,7 +123,7 @@ int client_access_queue_dequeue(char *buf)
     }
 
     pthread_mutex_lock(&client_access_queue_mutex);
-    ret_node = list_first_entry(&client_access_queue, mac_node_t, list);
+    ret_node = dlist_first_entry(&client_access_queue, mac_node_t, dlist);
     if (!ret_node) {
         pthread_mutex_unlock(&client_access_queue_mutex);
         return -1;
@@ -131,7 +131,7 @@ int client_access_queue_dequeue(char *buf)
 
     memcpy(buf, ret_node->mac, MAC_ADDR_LEN);
 
-    list_del(&ret_node->list);
+    dlist_del(&ret_node->dlist);
     pthread_mutex_unlock(&client_access_queue_mutex);
 
     if (ret_node) {
@@ -153,7 +153,7 @@ int client_access_queue_delete(char *mac)
         return -1;
     }
 
-    list_del(&ret_node->list);
+    dlist_del(&ret_node->dlist);
     pthread_mutex_unlock(&client_access_queue_mutex);
 
     if (ret_node) {
@@ -172,7 +172,7 @@ int client_access_queue_peek_last(char *buf)
     }
 
     pthread_mutex_lock(&client_access_queue_mutex);
-    ret_node = list_last_entry(&client_access_queue, mac_node_t, list);
+    ret_node = dlist_last_entry(&client_access_queue, mac_node_t, dlist);
     if (!ret_node) {
         pthread_mutex_unlock(&client_access_queue_mutex);
         debug(LOG_ERR, "can not get last mac");
@@ -192,7 +192,7 @@ void client_access_queue_show_all()
 
     printf("%s: print all mac in client_access_queue\n", __FUNCTION__);
     pthread_mutex_lock(&client_access_queue_mutex);
-    list_for_each_entry(pos, &client_access_queue, mac_node_t, list) {
+    dlist_for_each_entry(pos, &client_access_queue, mac_node_t, dlist) {
         printf("%d: %s\n", ++i, pos->mac);
     }
     pthread_mutex_unlock(&client_access_queue_mutex);

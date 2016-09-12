@@ -16,7 +16,7 @@
 #define APPID_LEN           (32UL)
 
 typedef struct click_record_queue_node_s {
-    list_head_t     list;
+    dlist_head_t    dlist;
     char            appid[APPID_LEN];
     char            mac[MAC_ADDR_LEN];
     int             type;

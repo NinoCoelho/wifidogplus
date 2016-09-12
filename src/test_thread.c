@@ -46,6 +46,7 @@
 #include "click_record_queue.h"
 #include "appctl.h"
 #include "wifiga_ubus_client.h"
+#include "counterfeit.h"
 
 #ifdef debug
 #undef debug
@@ -370,6 +371,14 @@ void test_onoffline_enqueue()
     }
 }
 
+void test_dumy_phone()
+{
+    char phone[PHONE_NUMBER_LEN] = {0};
+    printf("----------phone %s\n", phone);sleep(1);
+    (void)counterfeit_phone_num(phone);
+    printf("----------phone %s\n", phone);sleep(1);
+}
+
 void thread_test(char* arg)
 {
     int result;
@@ -433,8 +442,12 @@ void thread_test(char* arg)
     //test_click_record_queue();
     test_click_record_backup();
     appctl_test();
-#endif /*0 */
     test_onoffline_enqueue();
+
+    test_auto_conn();
+#endif /*0 */
+    test_dumy_phone();
+
 
 }
 

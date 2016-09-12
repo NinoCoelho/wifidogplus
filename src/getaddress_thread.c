@@ -58,7 +58,7 @@ typedef struct server_address_s {
 
 typedef struct server_address_node_s {
     server_address_t address;
-    struct list_head list;
+    struct dlist_head list;
 } server_address_node_t;
 
 typedef int (*PROCESS_t)(char *);
@@ -81,7 +81,7 @@ pthread_cond_t          get_address_thread_cond = PTHREAD_COND_INITIALIZER;
 pthread_mutex_t         get_address_thread_cond_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 
-static list_head_t server_list; /* save the auth severs list. only this thread operating this list, so avoid lock */
+static dlist_head_t server_list; /* save the auth severs list. only this thread operating this list, so avoid lock */
 
 
 void thread_getaddress(char *arg)
@@ -89,7 +89,7 @@ void thread_getaddress(char *arg)
     struct  timespec        timeout;
     static int run_count;
 
-    INIT_LIST_HEAD(&server_list);
+    INIT_DLIST_HEAD(&server_list);
 
     while (1) {
 #if 1
@@ -279,7 +279,7 @@ static int parse_address(char *reponse)
 
         exist_flag = 0;
         /* if only did not have the same node in the list, then add to the list */
-        list_for_each_entry(pos, &server_list, server_address_node_t, list) {
+        dlist_for_each_entry(pos, &server_list, server_address_node_t, list) {
             if (!strncasecmp(pos->address.protocol, new_node.address.protocol, strlen(new_node.address.protocol) + 1)
                 && !strncasecmp(pos->address.ip, new_node.address.ip, strlen(new_node.address.ip) + 1)
                 && !strncasecmp(pos->address.port, new_node.address.port, strlen(new_node.address.port) + 1)
@@ -296,9 +296,9 @@ static int parse_address(char *reponse)
             debug(LOG_DEBUG, "adding new server to list, protocol %s, ip %s, port %s, path %s, iport %d",
                 new_server->address.protocol, new_server->address.ip, new_server->address.port, new_server->address.path, new_server->address.iport);
             if (new_server->address.optimal_flag) {
-                list_add(&new_server->list, &server_list); /* the optimal one set as the first */
+                dlist_add(&new_server->list, &server_list); /* the optimal one set as the first */
             } else {
-                list_add_tail(&new_server->list, &server_list);
+                dlist_add_tail(&new_server->list, &server_list);
             }
             new_server = NULL;
         }
@@ -361,7 +361,7 @@ static void update_authserv_list(void)
     t_auth_serv *new_server;
     int exist_flag;
 
-    list_for_each_entry(pos, &server_list, server_address_node_t, list) {
+    dlist_for_each_entry(pos, &server_list, server_address_node_t, list) {
         debug(LOG_DEBUG, "the ip is %s, port is %s, iport is %d", pos->address.ip, pos->address.port, pos->address.iport);
         /* check exist, and add to wifidog autu list */
         if (auth_servers == NULL) {
@@ -402,12 +402,12 @@ static void elect_optimal_authserver()
     t_auth_serv	*auth_servers = config_get_config()->auth_servers;
     t_auth_serv	*auth_tmp;
 
-    if (list_empty(&server_list)) {
+    if (dlist_empty(&server_list)) {
         debug(LOG_DEBUG, "server_list have nothing");
         return;
     }
 
-    first_auth = list_first_entry(&server_list, server_address_node_t, list);
+    first_auth = dlist_first_entry(&server_list, server_address_node_t, list);
     for (auth_tmp = auth_servers; auth_tmp != NULL; auth_tmp = auth_tmp->next) {
         debug(LOG_DEBUG, "elect_optimal_authserver, auth_tmp hostname %s, port %d, path %s",
             auth_tmp->authserv_hostname, auth_tmp->authserv_http_port, auth_tmp->authserv_path);
@@ -515,11 +515,11 @@ static int join_option_name(char *buf, const char *name, int number)
 
 static void destory_server_list()
 {
-    struct list_head *pos, *ptmp;
+    struct dlist_head *pos, *ptmp;
     server_address_node_t *pos_node;
-    list_for_each_safe(pos, ptmp, &server_list) {
-        pos_node = list_entry(pos, server_address_node_t, list);
-        list_del(pos);
+    dlist_for_each_safe(pos, ptmp, &server_list) {
+        pos_node = dlist_entry(pos, server_address_node_t, list);
+        dlist_del(pos);
         free(pos_node);
     }
 }

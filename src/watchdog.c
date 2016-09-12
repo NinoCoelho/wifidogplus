@@ -44,12 +44,12 @@ pthread_mutex_t         watchdog_thread_cond_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 typedef struct pthread_watchdog_node_s {
     char *name;
-    struct list_head list;
+    struct dlist_head list;
     time_t	feed_time;
     int timeout_count;
 } pthread_watchdog_node_t;
 
-LIST_HEAD(pthread_watchdog_list);
+DLIST_HEAD(pthread_watchdog_list);
 pthread_mutex_t pthread_watchdog_list_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 typedef enum {
@@ -224,7 +224,7 @@ static inline pthread_watchdog_node_t *pthread_watchdog_search_list(char *name)
 {
     pthread_watchdog_node_t              *tpos;
 
-    list_for_each_entry(tpos, &pthread_watchdog_list, pthread_watchdog_node_t, list) {
+    dlist_for_each_entry(tpos, &pthread_watchdog_list, pthread_watchdog_node_t, list) {
         if (!strncmp(tpos->name, name, strlen(tpos->name))) {
             return tpos;
         }
@@ -237,7 +237,7 @@ void pthread_watchdog_dump_list()
 {
     pthread_watchdog_node_t              *tpos;
 
-    list_for_each_entry(tpos, &pthread_watchdog_list, pthread_watchdog_node_t, list) {
+    dlist_for_each_entry(tpos, &pthread_watchdog_list, pthread_watchdog_node_t, list) {
         printf("name %s, feed time %ld\n", tpos->name, tpos->feed_time);
     }
     debug(LOG_ERR, "dump end");
@@ -267,13 +267,13 @@ static void pthread_watchdog_init_list(void)
 
 static void pthread_watchdog_destory_list(void)
 {
-    struct list_head *pos, *ptmp;
+    struct dlist_head *pos, *ptmp;
     pthread_watchdog_node_t *pos_node;
 
     pthread_mutex_lock(&pthread_watchdog_list_mutex);
-    list_for_each_safe(pos, ptmp, &pthread_watchdog_list) {
-        pos_node = list_entry(pos, pthread_watchdog_node_t, list);
-        list_del(pos);
+    dlist_for_each_safe(pos, ptmp, &pthread_watchdog_list) {
+        pos_node = dlist_entry(pos, pthread_watchdog_node_t, list);
+        dlist_del(pos);
         careful_free(pos_node->name);
         careful_free(pos_node);
     }
@@ -304,7 +304,7 @@ int pthread_watchdog_register(char *name)
     new_node->name = safe_strdup(name);
     new_node->feed_time = time(NULL);
     new_node->timeout_count = 0;
-    list_add(&new_node->list, &pthread_watchdog_list);
+    dlist_add(&new_node->list, &pthread_watchdog_list);
     pthread_mutex_unlock(&pthread_watchdog_list_mutex);
 
     return 0;
@@ -340,7 +340,7 @@ static int is_pthreads_welldone()
     int timeout = config_get_config()->threadWatchdogTimeout;
 
     pthread_mutex_lock(&pthread_watchdog_list_mutex);
-    list_for_each_entry(tpos, &pthread_watchdog_list, pthread_watchdog_node_t, list) {
+    dlist_for_each_entry(tpos, &pthread_watchdog_list, pthread_watchdog_node_t, list) {
         if (current_time - tpos->feed_time >= checkinterval * timeout) {
             /* because of time sever stoping when shutdown, it will timeout usually firsttime */
             if (0 == tpos->timeout_count) {
