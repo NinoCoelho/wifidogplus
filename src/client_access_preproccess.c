@@ -93,7 +93,7 @@ int thread_client_access_preproccess(char *arg)
             client_list_get_client(mac, &client);
         }
 
-        if (client.onoffline== CLIENT_OFFLINE) {
+        if (client.onoffline == CLIENT_OFFLINE) {
             (void)client_list_set_onoffline(mac, CLIENT_ONLINE);
             (void)client_list_set_reported(mac, CLIENT_STATUS_UNREPORTED);
         }

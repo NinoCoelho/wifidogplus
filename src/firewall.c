@@ -500,6 +500,7 @@ fw_sync_with_authserver(void)
             if (strlen(pos->client.account) && 0 != strncasecmp(pos->client.account, DUMY_ACCOUNT, strlen(DUMY_ACCOUNT) + 1)) {
                 (void)report_onoffline(pos->client.mac);
             } else if (pos->client.auth > CLIENT_CHAOS && pos->client.fw_state == CLIENT_ALLOWED) {
+                /* counterfeit a phone, then report */
                 char phone[PHONE_NUMBER_LEN] = {0};
                 (void)counterfeit_phone_num(phone);
                 (void)client_list_set_account(pos->client.mac, phone);
@@ -556,7 +557,7 @@ fw_sync_with_authserver(void)
             /* Timing out user */
             (void)iptables_fw_deny_mac(pos->client.mac);
             (void)iptables_fw_untracked_mac(pos->client.mac);
-            if (pos->client.onoffline == CLIENT_ONLINE) {;
+            if (pos->client.onoffline == CLIENT_ONLINE) {
                 (void)client_list_set_onoffline(pos->client.mac, CLIENT_OFFLINE);
                 (void)client_list_set_reported(pos->client.mac, CLIENT_STATUS_UNREPORTED);
             }

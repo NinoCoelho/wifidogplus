@@ -322,11 +322,21 @@ int report_onoffline(const char *mac)
 	blobmsg_add_u32(&b, "rssi", client.rssi); /* CCC: int elem cannot be 0 */
     blobmsg_add_u32(&b, "authmode", config->wd_auth_mode);
     blobmsg_add_string(&b, "account", client.account);
-	blobmsg_add_u64(&b, "time", time(NULL));
 
     if (CLIENT_ONLINE == client.onoffline) {
+        if (!client.allow_time) {
+            client.allow_time = time(NULL);
+            client_list_set_allow_time(mac, client.allow_time);
+        }
+        blobmsg_add_u64(&b, "ontime", client.allow_time);
         ret = ubus_call("wifiga", "online", b.head, (void *)mac);
     } else {
+        if (!client.allow_time) {
+            client.allow_time = time(NULL) - 600; /* may be something wrong, counterfeit ontime of 10 minutes */
+            client_list_set_allow_time(mac, client.allow_time);
+        }
+        blobmsg_add_u64(&b, "ontime", client.allow_time);
+        blobmsg_add_u64(&b, "offtime", time(NULL));
         ret = ubus_call("wifiga", "offline", b.head, (void *)mac);
     }
     (void)client_list_set_reported(mac, CLIENT_STATUS_REPORTED);

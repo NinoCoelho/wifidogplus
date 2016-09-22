@@ -820,7 +820,7 @@ int iptables_fw_deny_mac(const char *mac)
         pthread_mutex_unlock(&fw_allow_mac_mutex);
         return -1;
     }
-    (void)client_list_set_allow_time(mac, 0);
+    //(void)client_list_set_allow_time(mac, 0);
     pthread_mutex_unlock(&fw_allow_mac_mutex);
 
 	return rc;
