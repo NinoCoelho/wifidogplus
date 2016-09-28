@@ -41,8 +41,6 @@ typedef struct client_s {
     int                 auth;               /* Client_auth_e */
     unsigned int        fw_state;           /* 0, 1 */
     unsigned int        tracked;            /* 0, 1 */
-    unsigned int        onoffline;          /* 0-offline, 1-online */
-    unsigned int        reported;          /* 1-yes, 0-no */
     int                 rssi;
     time_t              allow_time;
     time_t              duration;           /* how much seconds for allow */
@@ -158,10 +156,6 @@ int client_list_get_auth(const char *mac, int *buf);
 int client_list_set_auth(const char *mac, int auth);
 int client_list_get_fw_state(const char *mac, unsigned int *buf);
 int client_list_set_fw_state(const char *mac, unsigned int fw_state);
-int client_list_get_onoffline(const char *mac, unsigned int *buf);
-int client_list_set_onoffline(const char *mac, unsigned int onoffline);
-int client_list_get_reported(const char *mac, unsigned int *buf);
-int client_list_set_reported(const char *mac, unsigned int reported);
 int client_list_get_rssi(const char *mac, int *buf);
 int client_list_set_rssi(const char *mac, int rssi);
 int client_list_get_allow_time(const char *mac, time_t *buf);

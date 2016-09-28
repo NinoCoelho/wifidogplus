@@ -496,18 +496,6 @@ fw_sync_with_authserver(void)
             do_qos(pos->client.mac);
         }
 
-        if (config->audit_enable && CLIENT_STATUS_UNREPORTED == pos->client.reported) {
-            if (strlen(pos->client.account) && 0 != strncasecmp(pos->client.account, DUMY_ACCOUNT, strlen(DUMY_ACCOUNT) + 1)) {
-                (void)report_onoffline(pos->client.mac);
-            } else if (pos->client.auth > CLIENT_CHAOS && pos->client.fw_state == CLIENT_ALLOWED) {
-                /* counterfeit a phone, then report */
-                char phone[PHONE_NUMBER_LEN] = {0};
-                (void)counterfeit_phone_num(phone);
-                (void)client_list_set_account(pos->client.mac, phone);
-                (void)report_onoffline(pos->client.mac);
-            }
-        }
-
 #if 0
         /* Ping the client, if he responds it'll keep activity on the link.
          * However, if the firewall blocks it, it will not help.  The suggested
@@ -557,10 +545,6 @@ fw_sync_with_authserver(void)
             /* Timing out user */
             (void)iptables_fw_deny_mac(pos->client.mac);
             (void)iptables_fw_untracked_mac(pos->client.mac);
-            if (pos->client.onoffline == CLIENT_ONLINE) {
-                (void)client_list_set_onoffline(pos->client.mac, CLIENT_OFFLINE);
-                (void)client_list_set_reported(pos->client.mac, CLIENT_STATUS_UNREPORTED);
-            }
 
             /* Advertise the logout if we have an auth server
             * cjpthree: change to did not advertise auth server, only do this thing local
@@ -575,6 +559,7 @@ fw_sync_with_authserver(void)
             continue;
         }
         else { /* client_list_is_connect_really(pos->client.mac) */
+            /* local auth mode, timeout client */
             if (IS_LOCAL_AUTH(config->wd_auth_mode)) {
                 if (pos->client.fw_state == CLIENT_ALLOWED) {
                     unsigned int remain = 0;

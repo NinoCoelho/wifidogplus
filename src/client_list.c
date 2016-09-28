@@ -254,8 +254,6 @@ int client_list_add(const char *mac)
     new_node->auth = CLIENT_CHAOS;
     new_node->fw_state = CLIENT_DENIED;
     new_node->tracked = CLIENT_UNTRACKED;
-    new_node->onoffline = CLIENT_OFFLINE;
-    new_node->reported = CLIENT_STATUS_UNREPORTED;
     new_node->rssi = CLIENT_RSSI_DEF;
     new_node->counters.incoming = 0;
     new_node->counters.outgoing = 0;
@@ -790,98 +788,6 @@ int client_list_set_fw_state(const char *mac, unsigned int fw_state)
         return -1;
     }
     client->fw_state = fw_state;
-    pthread_mutex_unlock(&client_list_mutex);
-
-    return 0;
-}
-
-int client_list_get_onoffline(const char *mac, unsigned int *buf)
-{
-    client_t *client;
-
-#if CLIENT_LIST_CHECK_CAREFUL
-    if (!mac || !buf || !client_clist_exist() || !is_mac_valid(mac)) {
-        return -1;
-    }
-#endif
-
-    pthread_mutex_lock(&client_list_mutex);
-    client = client_list_search(mac);
-    if (!client) {
-        pthread_mutex_unlock(&client_list_mutex);
-        debug(LOG_INFO, "can not find mac %s", mac);
-        return -1;
-    }
-    *buf = client->onoffline;
-    pthread_mutex_unlock(&client_list_mutex);
-
-    return 0;
-}
-
-int client_list_set_onoffline(const char *mac, unsigned int onoffline)
-{
-    client_t *client;
-
-#if CLIENT_LIST_CHECK_CAREFUL
-    if (!mac || !client_clist_exist() || !is_mac_valid(mac)) {
-        return -1;
-    }
-#endif
-
-    pthread_mutex_lock(&client_list_mutex);
-    client = client_list_search(mac);
-    if (!client) {
-        pthread_mutex_unlock(&client_list_mutex);
-        debug(LOG_INFO, "can not find mac %s", mac);
-        return -1;
-    }
-    client->onoffline = onoffline;
-    pthread_mutex_unlock(&client_list_mutex);
-
-    return 0;
-}
-
-int client_list_get_reported(const char *mac, unsigned int *buf)
-{
-    client_t *client;
-
-#if CLIENT_LIST_CHECK_CAREFUL
-    if (!mac || !buf || !client_clist_exist() || !is_mac_valid(mac)) {
-        return -1;
-    }
-#endif
-
-    pthread_mutex_lock(&client_list_mutex);
-    client = client_list_search(mac);
-    if (!client) {
-        pthread_mutex_unlock(&client_list_mutex);
-        debug(LOG_INFO, "can not find mac %s", mac);
-        return -1;
-    }
-    *buf = client->reported;
-    pthread_mutex_unlock(&client_list_mutex);
-
-    return 0;
-}
-
-int client_list_set_reported(const char *mac, unsigned int reported)
-{
-    client_t *client;
-
-#if CLIENT_LIST_CHECK_CAREFUL
-    if (!mac || !client_clist_exist() || !is_mac_valid(mac)) {
-        return -1;
-    }
-#endif
-
-    pthread_mutex_lock(&client_list_mutex);
-    client = client_list_search(mac);
-    if (!client) {
-        pthread_mutex_unlock(&client_list_mutex);
-        debug(LOG_INFO, "can not find mac %s", mac);
-        return -1;
-    }
-    client->reported = reported;
     pthread_mutex_unlock(&client_list_mutex);
 
     return 0;

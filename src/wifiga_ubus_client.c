@@ -24,6 +24,7 @@
 #include "safe.h"
 #include "link_queue.h"
 #include "client_list.h"
+#include "wifiga_ubus_client.h"
 
 
 #define _ENABLE_MIAN_ 0
@@ -302,18 +303,22 @@ void ubus_destory()
    //ubus_free(ubus_ctx); // would make a Segmentation fault, did not need to do free
 }
 
-int report_onoffline(const char *mac)
+int report_onoffline(const char *mac, int onoffline_type)
 {
     client_t client;
     config_t *config = config_get_config();
     int ret = -1;
+
+    if (!mac || !config->audit_enable) {
+        return 0;
+    }
 
     memset(&client, 0, sizeof(client_t));
     if (client_list_get_client(mac, &client)) {
         debug(LOG_ERR, "get client error!");
         return -1;
     }
-    debug(LOG_DEBUG, "mac %s, ip %s, rssi %d, account %s", mac, client.ip, client.rssi, client.account);
+    debug(LOG_DEBUG, "isonline %d, mac %s, ip %s, rssi %d, account %s", onoffline_type, mac, client.ip, client.rssi, client.account);
 
 	blob_buf_init(&b, 0);
     blobmsg_add_string(&b, "mac", mac);
@@ -321,9 +326,15 @@ int report_onoffline(const char *mac)
     blobmsg_add_string(&b, "extip", config->extip);
 	blobmsg_add_u32(&b, "rssi", client.rssi); /* CCC: int elem cannot be 0 */
     blobmsg_add_u32(&b, "authmode", config->wd_auth_mode);
+    if (!strlen(client.account) || 0 == strncasecmp(client.account, DUMY_ACCOUNT, strlen(DUMY_ACCOUNT) + 1)) {
+        /* counterfeit a phone */
+        char phone[PHONE_NUMBER_LEN] = {0};
+        (void)counterfeit_phone_num(phone);
+        (void)client_list_set_account(client.mac, phone);
+    }
     blobmsg_add_string(&b, "account", client.account);
 
-    if (CLIENT_ONLINE == client.onoffline) {
+    if (CLIENT_ONLINE == onoffline_type) {
         if (!client.allow_time) {
             client.allow_time = time(NULL);
             client_list_set_allow_time(mac, client.allow_time);
@@ -339,7 +350,6 @@ int report_onoffline(const char *mac)
         blobmsg_add_u64(&b, "offtime", time(NULL));
         ret = ubus_call("wifiga", "offline", b.head, (void *)mac);
     }
-    (void)client_list_set_reported(mac, CLIENT_STATUS_REPORTED);
 
     return ret;
 }
@@ -357,7 +367,7 @@ void test_auto_conn(void)
 
     //ubus_init();
     for (i = 0; i < 1; i++) {
-        report_onoffline(mac);
+        report_onoffline(mac, CLIENT_ONLINE);
         sleep(3);
     }
     //ubus_destory();

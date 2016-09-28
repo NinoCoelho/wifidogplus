@@ -48,6 +48,8 @@
 #include "util.h"
 #include "client_list.h"
 #include "list.h"
+#include "wifiga_ubus_client.h"
+
 
 #define ONE_COMAND_MAX_LENGTH (128UL)
 
@@ -787,6 +789,7 @@ int iptables_fw_allow_mac(const char *mac)
         return -1;
     }
     (void)client_list_set_allow_time(mac, time(NULL));
+    (void)report_onoffline(mac, CLIENT_ONLINE);
     pthread_mutex_unlock(&fw_allow_mac_mutex);
 
 	return rc;
@@ -821,6 +824,7 @@ int iptables_fw_deny_mac(const char *mac)
         return -1;
     }
     //(void)client_list_set_allow_time(mac, 0);
+    (void)report_onoffline(mac, CLIENT_OFFLINE);
     pthread_mutex_unlock(&fw_allow_mac_mutex);
 
 	return rc;

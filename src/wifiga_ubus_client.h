@@ -16,7 +16,7 @@
 
 int onoffline_enqueue(char *mac, int isonline, char *rssi, time_t time);
 
-int wifiga_ubus_client_main_loop(const char *ubus_socket);
+int wifiga_ubus_client_main_loop(void *ubus_socket);
 
 void wifiga_ubus_client_exit(void);
 
@@ -29,7 +29,7 @@ int ubus_init(void);
 
 void ubus_destory();
 
-int report_onoffline(const char *mac);
+int report_onoffline(const char *mac, int onoffline_type);
 
 void test_auto_conn(void);
 
