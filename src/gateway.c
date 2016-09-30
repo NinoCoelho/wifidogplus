@@ -541,7 +541,7 @@ main_loop(void)
 
 	httpdAddCContent(webserver, "/wifidog", "shumo", 0, NULL, http_callback_shumo);
 
-    httpdAddFileContent(webserver, "/", "favicon.ico", 0, NULL, "/etc_ro/web/favicon.ico");
+    httpdAddFileContent(webserver, "/", "favicon.ico", 0, NULL, "/etc_ro/wechat/favicon.ico");
 
 	httpdSetErrorFunction(webserver, 404, http_callback_404);
 
