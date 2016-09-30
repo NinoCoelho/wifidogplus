@@ -761,6 +761,7 @@ int iptables_fw_allow_mac(const char *mac)
 {
 	int rc = 0;
     client_t client;
+    config_t *config = config_get_config();
 
 #if _CHECK_CAREFUL_
     if (!is_mac_valid(mac)) {
@@ -789,7 +790,9 @@ int iptables_fw_allow_mac(const char *mac)
         return -1;
     }
     (void)client_list_set_allow_time(mac, time(NULL));
-    (void)report_onoffline(mac, CLIENT_ONLINE);
+    if (config->audit_enable) {
+        (void)report_onoffline(mac, CLIENT_ONLINE);
+    }
     pthread_mutex_unlock(&fw_allow_mac_mutex);
 
 	return rc;
@@ -799,6 +802,7 @@ int iptables_fw_deny_mac(const char *mac)
 {
 	int rc = 0;
     client_t client;
+    config_t *config = config_get_config();
 
 #if _CHECK_CAREFUL_
     if (!is_mac_valid(mac)) {
@@ -824,7 +828,9 @@ int iptables_fw_deny_mac(const char *mac)
         return -1;
     }
     //(void)client_list_set_allow_time(mac, 0);
-    (void)report_onoffline(mac, CLIENT_OFFLINE);
+    if (config->audit_enable) {
+        (void)report_onoffline(mac, CLIENT_OFFLINE);
+    }
     pthread_mutex_unlock(&fw_allow_mac_mutex);
 
 	return rc;
