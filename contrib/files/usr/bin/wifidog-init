@@ -27,6 +27,7 @@ case "$1" in
     else
         #$0 test-module
         $WD_DIR/wifidog &
+        sleep 4
         /usr/sbin/WhiteList
         /usr/sbin/BlackList
     fi
