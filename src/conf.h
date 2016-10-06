@@ -48,6 +48,7 @@
 #define DEFAULT_DEBUGLEVEL LOG_WARNING
 #define DEFAULT_HTTPDMAXCONN 10
 #define DEFAULT_EXTERNAL_INTERFACE "eth0.2"
+#define DEFAULT_EXTIP "112.95.39.24"
 #define DEFAULT_GATEWAYID NULL
 #define DEFAULT_GATEWAYPORT 2060
 #define DEFAULT_HTTPDNAME "WiFiDog"
@@ -171,8 +172,8 @@ typedef struct {
     char *internal_sock;		/**< @brief internal path to socket */
     int daemon;			/**< @brief if daemon > 0, use daemon mode */
     int debuglevel;		/**< @brief Debug information verbosity */
-    char *external_interface;	/**< @brief External network interface name for
-				     firewall rules */
+    char *external_interface;	/**< @brief External network interface name for firewall rules */
+    char *extip;
     char *gw_id;		/**< @brief ID of the Gateway, sent to central
 				     server */
     char *gw_interface;		/**< @brief Interface we will accept connections on */

@@ -46,7 +46,46 @@
 
 
 sem_t sem_client_access_get_mac;
+static siso_queue_t get_client_queue;
 static int fd;
+
+static int get_client_queue_int(void)
+{
+    return siso_queue_init(&get_client_queue, sizeof(client_node_t));
+}
+
+static void get_client_queue_destory(void)
+{
+    siso_queue_destory(&get_client_queue);
+}
+
+int get_client_dequeue(client_node_t *buf)
+{
+	if (!buf) {
+		return -1;
+	}
+
+	return siso_queue_dequeue(&get_client_queue, buf);
+}
+
+int get_client_enqueue(char *mac, int rssi)
+{
+    client_node_t node;
+
+	if (!mac) {
+		return -1;
+	}
+
+    memset(&node, 0, sizeof(client_node_t));
+    memcpy(node.mac, mac, strlen(mac));
+    node.rssi = rssi;
+
+	if (siso_queue_is_exsit(&get_client_queue, &node)) {
+		return 1;
+	}
+
+	return siso_queue_enqueue(&get_client_queue, &node);
+}
 
 #if GET_CLIENT_NETLINK
 #define NETLINK_GET_CLIENT 30
@@ -57,14 +96,15 @@ static int process_client(char *data)
 {
     unsigned  char mac[MAC_ADDR_LEN]  = {0};
     int ret;
+    int rssi = 0;
 
     if (!strstr(data, get_client_expect_msg)) {
         return -1;
     }
-    sscanf(data + strlen(get_client_expect_msg), "%s", mac);
+    sscanf(data + strlen(get_client_expect_msg), "%s %d", mac, &rssi);
 
-    debug(LOG_DEBUG, "get mac from client access device %s", mac);
-    ret = siso_queue_set_mac(mac);
+    debug(LOG_DEBUG, "get mac from client access device %s, rssi %d", mac, rssi);
+    ret = get_client_enqueue(mac, rssi);
     if (ret == 1) {
         debug(LOG_DEBUG, "mac %s had existed in SISO queue", mac);
         return -1;
@@ -85,7 +125,7 @@ int thread_get_client(char* arg)
     struct msghdr msg;
     static int sent_count = 0;
 
-    (void)siso_queue_init();
+    get_client_queue_int();
 
     printf("netlink: %d\n", NETLINK_GET_CLIENT);
 
@@ -137,7 +177,7 @@ int thread_get_client(char* arg)
 
     careful_free(nlh);
     close(fd);
-    siso_queue_destory();
+    get_client_queue_destory();
     return 0;
 }
 #endif
@@ -149,7 +189,7 @@ int thread_get_client(char *arg)
     int ret;
     static int retry_time;
 
-    (void)siso_queue_init();
+    get_client_queue_int();
 
 OPEN_CLIENT_ACCESS:
 #if GET_CLIENT_DEV
@@ -165,7 +205,7 @@ OPEN_CLIENT_ACCESS:
         if (retry_time++ < RETRY_MAX_TIME) {
             goto OPEN_CLIENT_ACCESS;
         } else {
-            siso_queue_destory();
+            get_client_queue_destory();
             return 0; /* normal termination */
         }
     }
@@ -179,7 +219,7 @@ OPEN_CLIENT_ACCESS:
         }
 
         debug(LOG_DEBUG, "get mac from client access device %s", mac);
-        ret = siso_queue_set_mac(mac);
+        ret = get_client_enqueue(mac, 0);
         if (ret == 1) {
             debug(LOG_DEBUG, "mac %s had existed in SISO queue", mac);
             continue;
@@ -191,7 +231,7 @@ OPEN_CLIENT_ACCESS:
     }
 
     close(fd);
-    siso_queue_destory();
+    get_client_queue_destory();
 
     return 0;
 }
@@ -200,6 +240,6 @@ OPEN_CLIENT_ACCESS:
 void thread_get_client_exit(void)
 {
     close(fd); /* this file can not close by system */
-    siso_queue_destory();
+    get_client_queue_destory();
 }
 

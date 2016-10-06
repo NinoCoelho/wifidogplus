@@ -44,7 +44,7 @@
 #define MAX_CLICK_RECORD_COUNT (1 << 13UL)
 
 
-static LIST_HEAD(click_record_queue);
+static DLIST_HEAD(click_record_queue);
 static pthread_mutex_t click_record_queue_mutex = PTHREAD_MUTEX_INITIALIZER;
 static unsigned int click_record_count;
 
@@ -61,8 +61,8 @@ void click_record_queue_destory()
     click_record_queue_node_t      *pos_tmp;
 
     pthread_mutex_lock(&click_record_queue_mutex);
-    list_for_each_entry_safe(pos, pos_tmp, &click_record_queue, click_record_queue_node_t, list) {
-        list_del(&pos->list);
+    dlist_for_each_entry_safe(pos, pos_tmp, &click_record_queue, click_record_queue_node_t, dlist) {
+        dlist_del(&pos->dlist);
         click_record_count--;
         careful_free(pos);
     }
@@ -76,7 +76,7 @@ static click_record_queue_node_t *click_record_queue_find(char *appid, time_t cl
 {
     click_record_queue_node_t      *pos;
 
-    list_for_each_entry(pos, &click_record_queue, click_record_queue_node_t, list) {
+    dlist_for_each_entry(pos, &click_record_queue, click_record_queue_node_t, dlist) {
         if (!strncasecmp(appid, pos->appid, APPID_LEN) && (pos->click_time == click_time)) {
             return pos;
         }
@@ -117,7 +117,7 @@ int click_record_queue_enqueue(char *appid, char *mac, int type, time_t click_ti
     memcpy(new_node->mac, mac, MAC_ADDR_LEN);
     new_node->type = type;
     new_node->click_time = click_time;
-    list_add_tail(&new_node->list, &click_record_queue);
+    dlist_add_tail(&new_node->dlist, &click_record_queue);
     click_record_count++;
     pthread_mutex_unlock(&click_record_queue_mutex);
 
@@ -133,14 +133,14 @@ int click_record_queue_dequeue(click_record_queue_node_t *buf)
     }
 
     pthread_mutex_lock(&click_record_queue_mutex);
-    ret_node = list_first_entry(&click_record_queue, click_record_queue_node_t, list);
+    ret_node = dlist_first_entry(&click_record_queue, click_record_queue_node_t, dlist);
     if (!ret_node) {
         pthread_mutex_unlock(&click_record_queue_mutex);
         return -1;
     }
 
     memcpy(buf, ret_node, sizeof(click_record_queue_node_t));
-    list_del(&ret_node->list);
+    dlist_del(&ret_node->dlist);
     click_record_count--;
     pthread_mutex_unlock(&click_record_queue_mutex);
 
@@ -160,7 +160,7 @@ int click_record_queue_peek_last(click_record_queue_node_t *buf)
     }
 
     pthread_mutex_lock(&click_record_queue_mutex);
-    ret_node = list_last_entry(&click_record_queue, click_record_queue_node_t, list);
+    ret_node = dlist_last_entry(&click_record_queue, click_record_queue_node_t, dlist);
     if (!ret_node) {
         pthread_mutex_unlock(&click_record_queue_mutex);
         debug(LOG_ERR, "can not get last mac");
@@ -180,7 +180,7 @@ void click_record_queue_show_all()
 
     printf("%s: print all mac in click_record_queue\n", __FUNCTION__);
     pthread_mutex_lock(&click_record_queue_mutex);
-    list_for_each_entry(pos, &click_record_queue, click_record_queue_node_t, list) {
+    dlist_for_each_entry(pos, &click_record_queue, click_record_queue_node_t, dlist) {
         printf("%d: %s %s %d %u\n", ++i, pos->appid, pos->mac, pos->type, pos->click_time);
     }
     printf("total %u\n", click_record_count);
@@ -193,7 +193,7 @@ void click_record_queue_traverse(_IN CLICK_RECORD_TRAVERSE_FUNC func, _IN void *
     click_record_queue_node_t      *pos_tmp;
 
     pthread_mutex_lock(&click_record_queue_mutex);
-    list_for_each_entry_safe(pos, pos_tmp, &click_record_queue, click_record_queue_node_t, list) {
+    dlist_for_each_entry_safe(pos, pos_tmp, &click_record_queue, click_record_queue_node_t, dlist) {
         if (func) {
             (void)func(pos, arg);
         }

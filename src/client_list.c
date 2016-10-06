@@ -26,6 +26,7 @@
 #include "client_list.h"
 #include "common.h"
 #include "hlist.h"
+#include "list.h"
 #include "util.h"
 
 
@@ -154,7 +155,7 @@ static int client_list_clean(void)
     unsigned long long total_time = 0;
     time_t average_time;
     client_hold_t *pos;
-    list_head_t clean_list = LIST_HEAD_INIT(clean_list);
+    dlist_head_t clean_list = DLIST_HEAD_INIT(clean_list);
     client_list_hold_t hold;
 
     if (!client_list_get_num()) {
@@ -175,7 +176,7 @@ static int client_list_clean(void)
         return -1;
     }
 
-    list_for_each_entry(pos, &clean_list, client_hold_t, list) {
+    dlist_for_each_entry(pos, &clean_list, client_hold_t, list) {
         debug(LOG_INFO, "delete mac %s", pos->client.mac);
         (void)client_list_del(pos->client.mac);
     }
@@ -246,13 +247,14 @@ int client_list_add(const char *mac)
     memcpy(new_node->mac, mac, MAC_ADDR_LEN); /* length must use MAC_ADDR_LEN */
     memcpy(new_node->ip, DUMY_IP, strlen(DUMY_IP) + 1);
     memcpy(new_node->token, DUMY_TOKEN, strlen(DUMY_TOKEN) + 1);
+    memcpy(new_node->account, DUMY_ACCOUNT, strlen(DUMY_ACCOUNT) + 1);
     memcpy(new_node->openid, DUMY_OPENID, strlen(DUMY_OPENID) + 1);
     memcpy(new_node->hostname, DUMY_HOST_NAME, strlen(DUMY_HOST_NAME) + 1);
     memcpy(new_node->recent_req, DUMY_REQ_URL, strlen(DUMY_REQ_URL) + 1);
     new_node->auth = CLIENT_CHAOS;
     new_node->fw_state = CLIENT_DENIED;
     new_node->tracked = CLIENT_UNTRACKED;
-    new_node->onoffline = CLIENT_OFFLINE;
+    new_node->rssi = CLIENT_RSSI_DEF;
     new_node->counters.incoming = 0;
     new_node->counters.outgoing = 0;
     new_node->counters.uplink_limit = 0;
@@ -402,7 +404,7 @@ int client_list_traverse(_IN CLIENT_LIST_TRAVERSE_FUNC func, _IN _OUT void *arg)
 int client_list_hold(const client_t *client, client_list_hold_t *hold)
 {
     client_hold_t *new_node;
-    list_head_t *head;
+    dlist_head_t *head;
 
 #if CLIENT_LIST_CHECK_CAREFUL
     if (!client || !hold || !hold->head) {
@@ -421,7 +423,7 @@ int client_list_hold(const client_t *client, client_list_hold_t *hold)
 
     new_node = (client_hold_t *)safe_malloc(sizeof(client_hold_t));
     memcpy(&new_node->client, client, sizeof(client_t));
-    list_add(&new_node->list, head);
+    dlist_add(&new_node->list, head);
 
     return 0;
 }
@@ -430,7 +432,7 @@ void client_list_destory_hold(client_list_hold_t *hold)
 {
     client_hold_t *pos;
     client_hold_t *pos_tmp;
-    list_head_t *head;
+    dlist_head_t *head;
 
 #if CLIENT_LIST_CHECK_CAREFUL
     if (!hold || !hold->head) {
@@ -440,8 +442,8 @@ void client_list_destory_hold(client_list_hold_t *hold)
 
     head = hold->head;
 
-    list_for_each_entry_safe(pos, pos_tmp, head, client_hold_t, list) {
-        list_del(&pos->list);
+    dlist_for_each_entry_safe(pos, pos_tmp, head, client_hold_t, list) {
+        dlist_del(&pos->list);
         careful_free(pos);
     }
 }
@@ -642,6 +644,55 @@ int client_list_set_openid(const char *mac, const char *openid)
     return 0;
 }
 
+int client_list_get_account(const char *mac, char *buf)
+{
+    client_t *client;
+
+#if CLIENT_LIST_CHECK_CAREFUL
+    if (!mac || !buf || !client_clist_exist() || !is_mac_valid(mac)) {
+        return -1;
+    }
+#endif
+
+    pthread_mutex_lock(&client_list_mutex);
+    client = client_list_search(mac);
+    if (!client) {
+        pthread_mutex_unlock(&client_list_mutex);
+        debug(LOG_INFO, "can not find mac %s", mac);
+        return -1;
+    }
+    memcpy(buf, client->account, strlen(client->account) + 1);
+    pthread_mutex_unlock(&client_list_mutex);
+
+    return 0;
+}
+
+int client_list_set_account(const char *mac, const char *account)
+{
+    client_t *client;
+
+#if CLIENT_LIST_CHECK_CAREFUL
+    if (!mac || !account || !client_clist_exist() || !is_mac_valid(mac)) {
+        return -1;
+    }
+    if (strlen(account) >= MAX_ACCOUNT_LEN) {
+        return -1;
+    }
+#endif
+
+    pthread_mutex_lock(&client_list_mutex);
+    client = client_list_search(mac);
+    if (!client) {
+        pthread_mutex_unlock(&client_list_mutex);
+        debug(LOG_INFO, "can not find mac %s", mac);
+        return -1;
+    }
+    memcpy(client->account, account, strlen(account) + 1);
+    pthread_mutex_unlock(&client_list_mutex);
+
+    return 0;
+}
+
 int client_list_get_auth(const char *mac, int *buf)
 {
     client_t *client;
@@ -742,7 +793,7 @@ int client_list_set_fw_state(const char *mac, unsigned int fw_state)
     return 0;
 }
 
-int client_list_get_onoffline(const char *mac, unsigned int *buf)
+int client_list_get_rssi(const char *mac, int *buf)
 {
     client_t *client;
 
@@ -759,13 +810,14 @@ int client_list_get_onoffline(const char *mac, unsigned int *buf)
         debug(LOG_INFO, "can not find mac %s", mac);
         return -1;
     }
-    *buf = client->onoffline;
+    *buf = client->rssi;
     pthread_mutex_unlock(&client_list_mutex);
 
     return 0;
 }
 
-int client_list_set_onoffline(const char *mac, unsigned int onoffline)
+
+int client_list_set_rssi(const char *mac, int rssi)
 {
     client_t *client;
 
@@ -782,7 +834,7 @@ int client_list_set_onoffline(const char *mac, unsigned int onoffline)
         debug(LOG_INFO, "can not find mac %s", mac);
         return -1;
     }
-    client->onoffline = onoffline;
+    client->rssi = rssi;
     pthread_mutex_unlock(&client_list_mutex);
 
     return 0;
@@ -1564,7 +1616,7 @@ static int client_list_ip_to_mac_exclude(const client_t *client,  _IN _OUT find_
     return 0;
 }
 
-int client_list_find_mac_by_ip_exclude(_IN char *ip, _IN char *mac, _OUT char *buf)
+int client_list_find_mac_by_ip_exclude(_IN const char *ip, _IN const char *mac, _OUT char *buf)
 {
     client_t *client;
     find_t find_arg;

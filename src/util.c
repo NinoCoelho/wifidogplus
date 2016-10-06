@@ -924,9 +924,9 @@ char * get_status_text() {
 	snprintf((buffer + len), (sizeof(buffer) - len), "Auth server reachable: %s\n", (is_auth_online() ? "yes" : "no"));
 	len = strlen(buffer);
 
-    list_head_t *pos;
+    dlist_head_t *pos;
     client_hold_t *tpos;
-    list_head_t traverse_list = LIST_HEAD_INIT(traverse_list);
+    dlist_head_t traverse_list = DLIST_HEAD_INIT(traverse_list);
     char time_buf[28] = {0};
     client_list_hold_t hold;
     unsigned int remain_time = 0;
@@ -943,8 +943,8 @@ char * get_status_text() {
     }
 
     count = 0;
-    list_for_each(pos, &traverse_list) {
-        tpos = list_entry(pos, client_hold_t, list);
+    dlist_for_each(pos, &traverse_list) {
+        tpos = dlist_entry(pos, client_hold_t, list);
         if (client_list_is_connect_really(tpos->client.mac)) {
             count++;
         }
@@ -961,8 +961,8 @@ char * get_status_text() {
     len = strlen(buffer);
 
 	count = 0;
-	list_for_each(pos, &traverse_list) {
-        tpos = list_entry(pos, client_hold_t, list);
+	dlist_for_each(pos, &traverse_list) {
+        tpos = dlist_entry(pos, client_hold_t, list);
 		snprintf((buffer + len), (sizeof(buffer) - len), "Client %d\n", count + 1);
 		len = strlen(buffer);
 
@@ -1094,9 +1094,9 @@ static inline int goahead_list_condition(const client_t *client, _IN void *args)
 char * get_status_text_goahead() {
 	char buffer[STATUS_BUF_SIZ];
 	ssize_t len = 0;
-    list_head_t *pos;
+    dlist_head_t *pos;
     client_hold_t *tpos;
-    list_head_t traverse_list = LIST_HEAD_INIT(traverse_list);
+    dlist_head_t traverse_list = DLIST_HEAD_INIT(traverse_list);
     client_list_hold_t hold;
     unsigned int remain_time = 0;
 
@@ -1108,8 +1108,8 @@ char * get_status_text_goahead() {
         debug(LOG_ERR, "fail to create client_traverse_list");
     }
 
-	list_for_each(pos, &traverse_list) {
-        tpos = list_entry(pos, client_hold_t, list);
+	dlist_for_each(pos, &traverse_list) {
+        tpos = dlist_entry(pos, client_hold_t, list);
 
         (void)client_list_get_remain_allow_time(tpos->client.mac, &remain_time);
 		snprintf((buffer + len), (sizeof(buffer) - len),

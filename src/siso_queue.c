@@ -1,244 +1,262 @@
 /**
- * Copyright(C) 2015. 1dcq. All rights reserved.
- *
- * siso_queue.c
- * Original Author : cjpthree@126.com, 2015-6-29.
- *
- * Description
- */
+* Copyright(C) 2015. 1dcq. All rights reserved.
+*
+* siso_queue.c
+* Original Author : cjpthree@126.com, 2015-6-29.
+* v1: change to common siso queue by cjpthree@126.com 2016-9-10
+*
+* Description
+*/
 #define _GNU_SOURCE
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <pthread.h>
 #include <string.h>
-#include <stdarg.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <netdb.h>
-#include <unistd.h>
 #include <syslog.h>
-#include <signal.h>
-#include <errno.h>
-#include <time.h>
-#include <fcntl.h>
-#include <unistd.h>
-#include <semaphore.h>
 
-#include "../config.h"
-#include "safe.h"
-#include "common.h"
-#include "conf.h"
-#include "debug.h"
-#include "client_access.h"
-#include "client_list.h"
-#include "firewall.h"
-#include "get_client.h"
+#include "siso_queue.h"
 
-#define CAP (1 << 7UL)
-#define MAX_ELEMENT (CAP * 4)
+#ifndef debug
+#define debug(level, format, ...) printf(format"\n", ## __VA_ARGS__)
+#endif
+#ifndef careful_free
+#define careful_free(p) \
+do { \
+    if (p) { \
+        free(p); \
+        (p) = NULL; \
+    } \
+} while (0)
+#endif
+//#define strncasecmp memcmp
 
-typedef char mac_t[MAC_ADDR_LEN];
+#define INIT_ELEMENT_DEF (1 << 7UL)
+#define MAX_ELEMENT_DEF (INIT_ELEMENT_DEF * 4)
 
-/* a position is always empty */
-static char *elements = NULL;
-static int capacity = CAP; /* avoid 0 */
-static int front = 0;
-static int rear = 0;
 
-int siso_queue_init(void)
+int siso_queue_init(siso_queue_t *queue, int node_size)
 {
-    if (elements) {
-        debug(LOG_INFO, "siso_queue initialized");
-        return 0;
-    }
+	memset(queue, 0, sizeof(siso_queue_t));
+	queue->first_capacity = INIT_ELEMENT_DEF;
+	queue->max_capacity = MAX_ELEMENT_DEF;
+	queue->node_size = node_size;
+	queue->capacity = queue->first_capacity;
 
-    elements = (char *)safe_malloc(CAP * MAC_ADDR_LEN);
+	queue->elements = (char *)malloc(queue->capacity * node_size);
+	if (!queue->elements) {
+		return -1;
+	}
+	memset(queue->elements, 0, queue->capacity * node_size);
 
-    memset(elements, 0, CAP * MAC_ADDR_LEN);
-    capacity = CAP;
-    front = 0;
-    rear = 0;
-
-    return 0;
+	return 0;
 }
 
-static inline int siso_queue_size(void)
+inline int siso_queue_size(siso_queue_t *queue)
 {
-    return ((capacity - front + rear) % capacity);
+	return ((queue->capacity - queue->front + queue->rear) % queue->capacity);
 }
 
-static inline int siso_queue_is_empty(void)
+void siso_queue_set_max_capacity(siso_queue_t *queue, int max_capacity)
 {
-    return (front == rear);
+	queue->max_capacity = max_capacity;
 }
 
-static inline int siso_queue_is_full(void)
+inline int siso_queue_is_empty(siso_queue_t *queue)
 {
-    return (siso_queue_size() == (capacity - 1));
+	return (queue->front == queue->rear);
 }
 
-static inline int siso_queue_expand_space(void)
+inline int siso_queue_is_full(siso_queue_t *queue)
 {
-    char *a = NULL;
-
-    if (capacity * 2 > MAX_ELEMENT) {
-        debug(LOG_INFO, "can not expand any more");
-        return -1;
-    }
-
-    a = (char *)realloc(elements, capacity * 2 * MAC_ADDR_LEN);
-    if (!a) {
-        debug(LOG_CRIT, "Failed to realloc");
-        exit(1);
-    }
-
-    elements = a;
-    capacity *= 2;
-
-    return 0;
+	return (siso_queue_size(queue) == (queue->capacity - 1));
 }
 
-static inline int siso_queue_enqueue(char *mac)
+static inline int siso_queue_expand_space(siso_queue_t *queue)
 {
-    if (siso_queue_is_full()) {
-        debug(LOG_ERR, "space not enough, expand space");
-        if (siso_queue_expand_space()) {
-            return -1;
-        }
-    }
+	char *a = NULL;
 
-    memcpy(elements + rear * MAC_ADDR_LEN, mac, MAC_ADDR_LEN);
-    rear = (rear + 1) % capacity;
+	if (queue->capacity * 2 > queue->max_capacity) {
+		debug(LOG_INFO, "can not expand any more");
+		return -1;
+	}
 
-    return 0;
+	a = (char *)realloc(queue->elements, queue->capacity * 2 * queue->node_size);
+	if (!a) {
+		debug(LOG_CRIT, "Failed to realloc");
+		exit(1);
+	}
+
+	queue->elements = a;
+	queue->capacity *= 2;
+
+	return 0;
 }
 
-static inline int siso_queue_dequeue(char *buf)
+int siso_queue_enqueue(siso_queue_t *queue, void *node)
 {
-    if (siso_queue_is_empty()) {
-        debug(LOG_ERR, "queue is empty");
-        return -1;
-    }
+	if (siso_queue_is_full(queue)) {
+		debug(LOG_ERR, "space not enough, expand space");
+		if (siso_queue_expand_space(queue)) {
+			return -1;
+		}
+	}
 
-    memcpy(buf, elements + front * MAC_ADDR_LEN, MAC_ADDR_LEN);
-    memset(elements + front * MAC_ADDR_LEN, 0, MAC_ADDR_LEN);
-    front = (front + 1) % capacity;
+	memcpy(queue->elements + queue->rear * queue->node_size, node, queue->node_size);
+	queue->rear = (queue->rear + 1) % queue->capacity;
 
-    return 0;
+	return 0;
 }
 
-static inline char *siso_queue_peek(void)
+int siso_queue_dequeue(siso_queue_t *queue, void *buf)
 {
-    if (siso_queue_is_empty()) {
-        debug(LOG_ERR, "queue is empty");
-        return NULL;
-    }
+	if (siso_queue_is_empty(queue)) {
+		debug(LOG_ERR, "queue is empty");
+		return -1;
+	}
 
-    return (elements + front * MAC_ADDR_LEN);
+	memcpy(buf, queue->elements + queue->front * queue->node_size, queue->node_size);
+	memset(queue->elements + queue->front * queue->node_size, 0, queue->node_size);
+	queue->front = (queue->front + 1) % queue->capacity;
+
+	return 0;
 }
 
-static inline char *siso_queue_peek_new(void)
+void *siso_queue_peek_first(siso_queue_t *queue)
 {
-    if (siso_queue_is_empty()) {
-        debug(LOG_ERR, "queue is empty");
-        return NULL;
-    }
+	if (siso_queue_is_empty(queue)) {
+		debug(LOG_ERR, "queue is empty");
+		return NULL;
+	}
 
-    return (elements + (rear - 1) * MAC_ADDR_LEN);
+	return (void *)(queue->elements + queue->front * queue->node_size);
 }
 
-static inline int siso_queue_is_exsit(char *mac)
+void *siso_queue_peek_last(siso_queue_t *queue)
 {
-    int i;
+	if (siso_queue_is_empty(queue)) {
+		debug(LOG_ERR, "queue is empty");
+		return NULL;
+	}
 
-    for (i = front; i % capacity < rear; i++) {
-        if (!strncasecmp(elements + i * MAC_ADDR_LEN, mac, MAC_ADDR_LEN)) {
-            return 1;
-        }
-    }
-
-    return 0;
+	return (void *)(queue->elements + (queue->rear - 1) * queue->node_size);
 }
 
-inline void siso_queue_destory(void)
+int siso_queue_is_exsit(siso_queue_t *queue, void *node)
 {
-    careful_free(elements);
-    return;
+	int i;
+
+	for (i = queue->front; i % queue->capacity < queue->rear; i++) {
+		if (!strncasecmp(queue->elements + i * queue->node_size, node, queue->node_size)) {
+			return 1;
+		}
+	}
+
+	return 0;
 }
 
-void siso_queue_print(void)
+void siso_queue_destory(siso_queue_t *queue)
 {
-    int i;
-
-    if (!elements) {
-        debug(LOG_INFO, "siso_queue uninitialized");
-        return;
-    }
-
-    printf("capacity %d\n", capacity);
-	printf("front %d\n", front);
-	printf("rear %d\n", rear);
-	printf("queue size %d\n", siso_queue_size());
-    for (i = front; i % capacity < rear; i++) {
-        printf("enum %d is %s\n", i, elements + i * MAC_ADDR_LEN);
-    }
-    printf("end\n");
+	careful_free(queue->elements);
+    memset(queue, 0, sizeof(siso_queue_t));
+	return;
 }
 
-int siso_queue_get_mac(char *buf)
+void siso_queue_print(siso_queue_t *queue)
 {
-    if (!buf) {
-        return -1;
-    }
+	int i;
 
-    return siso_queue_dequeue(buf);
+	if (!queue->elements) {
+		debug(LOG_INFO, "siso_queue uninitialized");
+		return;
+	}
+
+	printf("capacity %d\n", queue->capacity);
+	printf("front %d\n", queue->front);
+	printf("rear %d\n", queue->rear);
+	printf("queue size %d\n", siso_queue_size(queue));
+	for (i = queue->front; i % queue->capacity < queue->rear; i++) {
+		//printf("enum %d is %s\n", i, queue->elements + i * queue->node_size);
+	}
+	printf("end\n");
 }
 
-int siso_queue_set_mac(char *mac)
+void siso_queue_test_(void)
 {
-    if (!mac) {
-        return -1;
-    }
+#ifndef MAC_ADDR_LEN
+    #define MAC_ADDR_LEN 18
+#endif
+    typedef char mac_t[MAC_ADDR_LEN];
+	char *mac = "00:00:00:00:22:24";
+	char *mac1 = "10:00:00:00:22:25";
+	char buf[MAC_ADDR_LEN];
+	int i;
+	siso_queue_t test_queue;
+	siso_queue_t *queue = &test_queue;
 
-    if (siso_queue_is_exsit(mac)) {
-        return 1;
-    }
+	if (siso_queue_init(queue, MAC_ADDR_LEN)) {
+		debug(LOG_ERR, "can not init QueueArray!");
+		return;
+	}
+	debug(LOG_DEBUG, "queue size %d", siso_queue_size(queue));
+	for (i = 0; i < INIT_ELEMENT_DEF; i++) {
+		siso_queue_enqueue(queue, mac);
+	}
 
-    return siso_queue_enqueue(mac);
+	debug(LOG_DEBUG, "new comming enum is  %s", (char *)siso_queue_peek_last(queue));
+
+	siso_queue_enqueue(queue, mac1);
+	debug(LOG_DEBUG, "queue size %d", siso_queue_size(queue));
+	for (i = 0; i < INIT_ELEMENT_DEF; i++) {
+		siso_queue_dequeue(queue, buf);
+	}
+
+	debug(LOG_DEBUG, "dequeue enum is %s", buf);
+	debug(LOG_DEBUG, "now top enum is  %s", (char *)siso_queue_peek_first(queue));
+	siso_queue_dequeue(queue, buf);
+	debug(LOG_DEBUG, "queue size %d", siso_queue_size(queue));
+	siso_queue_dequeue(queue, buf);
+	siso_queue_destory(queue);
 }
 
 void siso_queue_test(void)
 {
-    char *mac = "00:00:00:00:22:24";
-    char *mac1 = "00:00:00:00:22:25";
-    char buf[MAC_ADDR_LEN];
-    int i;
+#ifndef MAC_ADDR_LEN
+    #define MAC_ADDR_LEN 18
+#endif
+	typedef struct node_s {
+		int id;
+		char mac[MAC_ADDR_LEN];
+		int reserve;
+	} node_t;
+	node_t mac = {1, "00:00:00:00:22:24"};
+	node_t mac1 = {2, "10:00:00:00:22:25"};
+	node_t buf;
+	int i;
+	siso_queue_t test_queue;
+	siso_queue_t *queue = &test_queue;
 
-    if (siso_queue_init()) {
-        debug(LOG_ERR, "can not init QueueArray!");
-        return;
-    }
-    debug(LOG_DEBUG, "queue size %d", siso_queue_size());
-    for (i = 0; i < CAP; i++) {
-        siso_queue_enqueue(mac);
-    }
+	if (siso_queue_init(queue, sizeof(node_t))) {
+		debug(LOG_ERR, "can not init QueueArray!");
+		return;
+	}
+	debug(LOG_DEBUG, "queue size %d", siso_queue_size(queue));
+	for (i = 0; i < INIT_ELEMENT_DEF; i++) {
+		siso_queue_enqueue(queue, &mac);
+	}
 
-    debug(LOG_DEBUG, "new comming enum is  %s", siso_queue_peek_new());
+	debug(LOG_DEBUG, "new comming enum is  %s", ((node_t *)siso_queue_peek_last(queue))->mac);
 
-    siso_queue_enqueue(mac1);
-    debug(LOG_DEBUG, "queue size %d", siso_queue_size());
-    for (i = 0; i < CAP; i++) {
-        siso_queue_dequeue(buf);
-    }
+	siso_queue_enqueue(queue, &mac1);
+	debug(LOG_DEBUG, "queue size %d", siso_queue_size(queue));
+	for (i = 0; i < INIT_ELEMENT_DEF; i++) {
+		siso_queue_dequeue(queue, &buf);
+	}
 
-    debug(LOG_DEBUG, "dequeue enum is %s", buf);
-    debug(LOG_DEBUG, "now top enum is  %s", siso_queue_peek());
-    siso_queue_dequeue(buf);
-    debug(LOG_DEBUG, "queue size %d", siso_queue_size());
-    siso_queue_dequeue(buf);
-    siso_queue_destory();
+	debug(LOG_DEBUG, "dequeue enum is %s", buf.mac);
+	debug(LOG_DEBUG, "now top enum is  %s", ((node_t *)siso_queue_peek_first(queue))->mac);
+	siso_queue_dequeue(queue, &buf);
+	debug(LOG_DEBUG, "queue size %d", siso_queue_size(queue));
+	siso_queue_dequeue(queue, &buf);
+	siso_queue_destory(queue);
 }
 

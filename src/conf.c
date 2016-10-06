@@ -228,6 +228,7 @@ config_init(void)
 	config.debuglevel = DEFAULT_DEBUGLEVEL;
 	config.httpdmaxconn = DEFAULT_HTTPDMAXCONN;
 	config.external_interface = safe_strdup(DEFAULT_EXTERNAL_INTERFACE);
+    config.extip = safe_strdup(DEFAULT_EXTIP);
 	config.gw_id = DEFAULT_GATEWAYID;
 	config.gw_interface = NULL;
 	config.gw_address = NULL;

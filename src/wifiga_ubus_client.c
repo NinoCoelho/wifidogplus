@@ -5,6 +5,7 @@
  * Original Author : chenjunpei@jarxi.com, 2016-9-5.
  *
  * Description
+ * CCC: this file is not thread safety, add lock when using in multithreading
  */
 
 #include <stdio.h>
@@ -22,11 +23,13 @@
 #include "conf.h"
 #include "safe.h"
 #include "link_queue.h"
+#include "client_list.h"
+#include "wifiga_ubus_client.h"
 
 
 #define _ENABLE_MIAN_ 0
 
-
+#define MAX_RSSI_LEN    (128UL)
 typedef struct onoffline_s {
     char mac[MAC_ADDR_LEN];
     char rssi[MAX_RSSI_LEN];
@@ -243,6 +246,132 @@ void wifiga_ubus_client_exit(void)
 	uloop_done();
 }
 
+
+/******************** ubus_auto_conn *****************************/
+
+static struct ubus_context *ubus_ctx = NULL;
+static struct ubus_auto_conn conn;
+
+static void ubus_connect_handler(struct ubus_context *ctx)
+{
+    ubus_ctx = ctx;
+    return;
+}
+
+int ubus_send(const char *type, struct blob_attr *data)
+{
+    if (!ubus_ctx || !type || !data) {
+        return -1;
+    }
+    return ubus_send_event(ubus_ctx, type, data);
+}
+
+static void receive_ubus_data(struct ubus_request *req, int type, struct blob_attr *msg)
+{
+    char *ret = (char *)req->priv;
+}
+
+int ubus_call(const char *path, const char *method, struct blob_attr *data, void *ret)
+{
+    uint32_t id;
+    int      _ret;
+
+    if (ubus_ctx == NULL) {
+        debug(LOG_ERR, "ubus_ctx == NULL!");
+        return -1;
+    }
+
+    _ret = ubus_lookup_id(ubus_ctx, path, &id);
+    if (_ret) {
+        debug(LOG_ERR, "lookup stats id error!");
+        return -1;
+    }
+
+    return ubus_invoke(ubus_ctx, id, method, data, receive_ubus_data, ret, 1000);
+}
+
+int ubus_init(void)
+{
+    conn.cb = ubus_connect_handler;
+    ubus_auto_connect(&conn);
+
+    return 0;
+}
+
+void ubus_destory()
+{
+   //ubus_free(ubus_ctx); // would make a Segmentation fault, did not need to do free
+}
+
+int report_onoffline(const char *mac, int onoffline_type)
+{
+    client_t client;
+    config_t *config = config_get_config();
+    int ret = -1;
+
+    if (!mac || !config->audit_enable) {
+        return 0;
+    }
+
+    memset(&client, 0, sizeof(client_t));
+    if (client_list_get_client(mac, &client)) {
+        debug(LOG_ERR, "get client error!");
+        return -1;
+    }
+    debug(LOG_DEBUG, "isonline %d, mac %s, ip %s, rssi %d, account %s", onoffline_type, mac, client.ip, client.rssi, client.account);
+
+	blob_buf_init(&b, 0);
+    blobmsg_add_string(&b, "mac", mac);
+    blobmsg_add_string(&b, "ip", client.ip);
+    blobmsg_add_string(&b, "extip", config->extip);
+	blobmsg_add_u32(&b, "rssi", client.rssi); /* CCC: int elem cannot be 0 */
+    blobmsg_add_u32(&b, "authmode", config->wd_auth_mode);
+    if (!strlen(client.account) || 0 == strncasecmp(client.account, DUMY_ACCOUNT, strlen(DUMY_ACCOUNT) + 1)) {
+        /* counterfeit a phone */
+        char phone[PHONE_NUMBER_LEN] = {0};
+        (void)counterfeit_phone_num(phone);
+        (void)client_list_set_account(client.mac, phone);
+    }
+    blobmsg_add_string(&b, "account", client.account);
+
+    if (CLIENT_ONLINE == onoffline_type) {
+        if (!client.allow_time) {
+            client.allow_time = time(NULL);
+            client_list_set_allow_time(mac, client.allow_time);
+        }
+        blobmsg_add_u64(&b, "ontime", client.allow_time);
+        ret = ubus_call("wifiga", "online", b.head, (void *)mac);
+    } else {
+        if (!client.allow_time) {
+            client.allow_time = time(NULL) - 600; /* may be something wrong, counterfeit ontime of 10 minutes */
+            client_list_set_allow_time(mac, client.allow_time);
+        }
+        blobmsg_add_u64(&b, "ontime", client.allow_time);
+        blobmsg_add_u64(&b, "offtime", time(NULL));
+        ret = ubus_call("wifiga", "offline", b.head, (void *)mac);
+    }
+
+    return ret;
+}
+
+void test_auto_conn(void)
+{
+    time_t curr_time = time(NULL);
+    int i;
+    char mac[MAC_ADDR_LEN] = "00:00:00:00:00:01";
+
+    client_list_add(mac);
+    client_list_set_ip(mac, "192.168.99.2");
+    client_list_set_account(mac, "account_test");
+    client_list_set_rssi(mac, -23);
+
+    //ubus_init();
+    for (i = 0; i < 1; i++) {
+        report_onoffline(mac, CLIENT_ONLINE);
+        sleep(3);
+    }
+    //ubus_destory();
+}
 
 #if _ENABLE_MIAN_
 int main(int argc, char **argv)

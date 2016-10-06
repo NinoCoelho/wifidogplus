@@ -92,18 +92,22 @@
 #define MAC_ADDR_LEN    (18UL)
 #define MAX_IPV4_LEN    (17UL)
 #define MAX_TOKEN_LEN   (128UL)
+#define MAX_ACCOUNT_LEN (256UL)
 #define MAX_OPENID_LEN  (128UL)
 #define MAX_HOST_NAME_LEN   (128UL)
 #define MAX_INTERFACE_NAME_LEN (16UL)
 #define MAX_RECORD_URL_LEN (512UL)
 #define HTTP_TIMEOUT    (40UL)
-#define MAX_RSSI_LEN    (128UL)
+#define PHONE_NUMBER_LEN (11 + 1UL)
 
 #define DUMY_IP         "0.0.0.0"
 #define DUMY_TOKEN      "0"
+#define DUMY_ACCOUNT    "0"
 #define DUMY_OPENID     "0"
 #define DUMY_HOST_NAME  "unkown"
 #define DUMY_REQ_URL    "http://www.baidu.com"
+
+#define CLIENT_RSSI_DEF (-75)
 
 enum {
 	OK,

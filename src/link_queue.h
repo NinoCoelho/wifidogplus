@@ -38,14 +38,14 @@ do { \
 typedef pthread_mutex_t         mutex_type;
 #define mutex_lock(mutex)       pthread_mutex_lock(&mutex)
 #define mutex_unlock(mutex)     pthread_mutex_unlock(&mutex)
-#define great_mutex()           PTHREAD_MUTEX_INITIALIZER
+#define init_mutex()            PTHREAD_MUTEX_INITIALIZER
 #define delete_mutex(mutex)     pthread_mutex_destory(&mutex)
 #endif
 #if (LOCK_TYPE == 2) /* for all */
 typedef unsigned char           mutex_type;
 #define mutex_lock(mutex)       {while(mutex); (mutex)++;}
 #define mutex_unlock(mutex)     (mutex)--
-#define great_mutex()           0
+#define init_mutex()            0
 #define delete_mutex(mutex)
 #endif
 #if (LOCK_TYPE == 3) /* for windows */
@@ -53,7 +53,7 @@ typedef unsigned char           mutex_type;
 typedef HANDLE                  mutex_type;
 #define mutex_lock(mutex)       WaitForSingleObject((mutex), INFINITE)
 #define mutex_unlock(mutex)     ReleaseMutex(mutex)
-#define great_mutex()           CreateMutex(NULL, FALSE, NULL)
+#define init_mutex()            CreateMutex(NULL, FALSE, NULL)
 #define delete_mutex(mutex)     CloseHandle(mutex)
 #endif
 
@@ -80,7 +80,7 @@ typedef struct link_queue_s {
 #define link_queue_init(queue_name) \
 { \
     SLIST_HEAD_INIT((queue_name).node), \
-    great_mutex(), \
+    init_mutex(), \
     0, \
     LINK_QUEUE_MAX_LEN_DEF \
 }

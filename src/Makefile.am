@@ -43,7 +43,8 @@ wifidog_SOURCES = commandline.c \
 	click_record_backup.c \
 	qos.c \
 	appctl.c \
-	wifiga_ubus_client.c
+	wifiga_ubus_client.c \
+	counterfeit.c
 
 noinst_HEADERS = commandline.h \
 	common.h \
@@ -83,7 +84,8 @@ noinst_HEADERS = commandline.h \
 	appctl.h \
 	slist.h \
 	link_queue.h \
-	wifiga_ubus_client.h
+	wifiga_ubus_client.h \
+	counterfeit.h
 
 
 wdctl_SOURCES = wdctl.c

@@ -86,7 +86,7 @@ static int fw_backup_restore_mac(char *mac, char *ip, int auth, unsigned int fw_
 
 int fw_backup_from_client_list()
 {
-    list_head_t restore_list = LIST_HEAD_INIT(restore_list);
+    dlist_head_t restore_list = DLIST_HEAD_INIT(restore_list);
     client_hold_t *pos;
     client_list_hold_t hold;
 
@@ -99,7 +99,7 @@ int fw_backup_from_client_list()
         return -1;
     }
 
-    list_for_each_entry(pos, &restore_list, client_hold_t, list) {
+    dlist_for_each_entry(pos, &restore_list, client_hold_t, list) {
         (void)fw_backup_restore_mac(pos->client.mac, pos->client.ip,
             pos->client.auth, pos->client.fw_state);
     }
@@ -139,12 +139,12 @@ int fw_backup_from_file()
     return 0;
 }
 
-static int fw_backup_store_mac(list_head_t *head, FILE *file)
+static int fw_backup_store_mac(dlist_head_t *head, FILE *file)
 {
     int ret;
     client_hold_t *pos;
 
-    list_for_each_entry(pos, head, client_hold_t, list) {
+    dlist_for_each_entry(pos, head, client_hold_t, list) {
         ret = fprintf(file, "%s %s %d %u\n",
             pos->client.mac, pos->client.ip, pos->client.auth, pos->client.fw_state);
         if (ret == -1) {
@@ -161,7 +161,7 @@ int fw_backup_refresh()
     FILE *file;
     int ret;
     char mac[MAC_ADDR_LEN] = {0};
-    list_head_t refresh_list = LIST_HEAD_INIT(refresh_list);
+    dlist_head_t refresh_list = DLIST_HEAD_INIT(refresh_list);
     client_list_hold_t hold;
 
     if (!(file = fopen(FW_BACKUP_FILE, "w+"))) {

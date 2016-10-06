@@ -330,11 +330,15 @@ termination_handler(int s)
 #endif
 
 #if OPEN_THREAD_WIFIGA_UBUS_CLIENT
+#if 0
     if (tid_wifiga_ubus_client && self != tid_wifiga_ubus_client) {
 		debug(LOG_INFO, "Explicitly killing the wifiga_ubus_client thread");
         wifiga_ubus_client_exit();
 		pthread_kill(tid_wifiga_ubus_client, SIGKILL);
 	}
+#else
+	ubus_destory();
+#endif
 #endif
 
 #if OPEN_THREAD_EXG_PROTOCOL
@@ -537,7 +541,7 @@ main_loop(void)
 
 	httpdAddCContent(webserver, "/wifidog", "shumo", 0, NULL, http_callback_shumo);
 
-    httpdAddFileContent(webserver, "/", "favicon.ico", 0, NULL, "/etc_ro/web/favicon.ico");
+    httpdAddFileContent(webserver, "/", "favicon.ico", 0, NULL, "/etc_ro/wechat/favicon.ico");
 
 	httpdSetErrorFunction(webserver, 404, http_callback_404);
 
@@ -665,12 +669,16 @@ main_loop(void)
 #endif
 
 #if OPEN_THREAD_WIFIGA_UBUS_CLIENT
+#if 0
     result = pthread_create(&tid_wifiga_ubus_client, NULL, (void*)wifiga_ubus_client_main_loop, NULL);
 	if (result != 0) {
 		debug(LOG_ERR,"FATAL: Failed to create a new thread(wifiga_ubus_client) -exiting");
 		termination_handler(0);
 	}
     pthread_detach(tid_wifiga_ubus_client);
+#else
+    ubus_init();
+#endif
 #endif
 
 #if OPEN_THREAD_TEST
@@ -753,6 +761,8 @@ int main(int argc, char **argv) {
 
 	/* Init the signals to catch chld/quit/etc */
 	init_signals();
+
+    srand((int)time(NULL));
 
 	if (restart_orig_pid) {
 		/*
