@@ -84,7 +84,7 @@
 #define ANTI_DOS_LIMIT  (12UL)
 
 #define RETRY_MAX_TIME  (2UL)
-#define REFRESH_TIME    (10 * 60UL)
+#define REFRESH_TIME    (5 * 60UL)
 
 /** @brief Read buffer for socket read? */
 #define MAX_BUF         (4096UL)

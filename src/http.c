@@ -1452,7 +1452,7 @@ void http_callback_appdl(httpd *webserver, request *r)
         strcat(appurl, concat);
         http_send_redirect(r, appurl, NULL);
     } else {
-        (void)click_record_queue_enqueue(appid, dev, atoi(type), current_time); /* record */
+        (void)click_record_queue_enqueue(appid, mac, atoi(type), current_time); /* record */
         strcat(appurl, concat);
         http_send_redirect(r, appurl, NULL);
     }
