@@ -1420,6 +1420,7 @@ void http_callback_appdl(httpd *webserver, request *r)
     }
     if ((httpvar = httpdGetVariableByName(r, "dev"))) {
         memcpy(dev, httpvar->value, strlen(httpvar->value));
+        (void)id_to_mac(mac, dev);
     }
     current_time = time(NULL);
 
@@ -1430,7 +1431,6 @@ void http_callback_appdl(httpd *webserver, request *r)
 
     /* allow the iphones */
     if (strlen(allow) && (atoi(allow) == 1)) {
-        (void)id_to_mac(mac, dev);
         (void)client_list_set_auth(mac, CLIENT_CHAOS);
         (void)iptables_fw_allow_mac(mac);
         if (strlen(duration) && (atoi(duration) != 0)) {
