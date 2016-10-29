@@ -31,6 +31,18 @@ do { \
 } while (0)
 #endif
 
+/* CCC: only use at confirm lvalue */
+#ifndef careful_free_lvalue
+#define careful_free_lvalue(p) \
+do { \
+    if (p) { \
+        free(p); \
+    } \
+} while (0)
+#endif
+
+
+
 /* define the lock */
 #define LOCK_TYPE 1
 #if (LOCK_TYPE == 1) /* for unix */
@@ -39,7 +51,7 @@ typedef pthread_mutex_t         mutex_type;
 #define mutex_lock(mutex)       pthread_mutex_lock(&mutex)
 #define mutex_unlock(mutex)     pthread_mutex_unlock(&mutex)
 #define init_mutex()            PTHREAD_MUTEX_INITIALIZER
-#define delete_mutex(mutex)     pthread_mutex_destory(&mutex)
+#define delete_mutex(mutex)     pthread_mutex_destroy(&mutex)
 #endif
 #if (LOCK_TYPE == 2) /* for all */
 typedef unsigned char           mutex_type;
@@ -76,6 +88,8 @@ typedef struct link_queue_s {
  * @queue_name: the queue's name
  * returns:
  *     the pointer of the queue
+ *
+ * CCC: only using on init a queue
  */
 #define link_queue_init(queue_name) \
 { \
@@ -165,7 +179,7 @@ do { \
 #define link_queue_free_node(node) \
 do { \
     if (node) { \
-        careful_free(node->data); \
+        careful_free(((link_queue_node_t *)node)->data); \
         careful_free(node); \
     } \
 } while (0)
@@ -285,6 +299,26 @@ do { \
     } \
     mutex_unlock((queue)->queue_mutex); \
 } while (0)
+
+/**
+ * function: destroy the queue
+ * @queue: the pointer of the queue
+ * returns:
+ *      none
+ */
+#define link_queue_destroy(queue) \
+do { \
+    slist_node_t      *pos_prev; \
+    slist_node_t      *pos; \
+    mutex_lock((queue)->queue_mutex); \
+    slist_for_each_safe(pos_prev, pos, (slist_head_t *)(queue)) { \
+        careful_free(((link_queue_node_t *)pos)->data); \
+        careful_free_lvalue((link_queue_node_t *)pos); \
+    } \
+    mutex_unlock((queue)->queue_mutex); \
+    delete_mutex((queue)->queue_mutex); \
+} while (0)
+
 
 #endif      /* _LINK_QUEUE_H_ */
 
