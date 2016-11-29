@@ -34,10 +34,16 @@ config wifidog 'wifidog'
 	option downlink_vip 192
 	option uplink_common 64
 	option downlink_common 128
-	option to_url 'https://wifi.99zjb.com/index.html?'
+	option to_url 'http://www.baidu.com'
 	option skip_SuccessPage 1
 	option reAssoc_reAuth 0
 	option proxyport 0
 	option separate_wired 1
 	option audit_enable 0
+	option loginscriptpathfragment 'wifi_toLogin.do?'
+	option pingscriptpathfragment 'wifi_doPing.do?'
+	option msgscriptpathfragment 'wifi_doMsg.do?'
+	option portalscriptpathfragment 'wifi_toCallBack.do?'
+	option authscriptpathfragment 'wifi_toAuth.do?'
+	option authmacscriptpathfragment 'wifi_toAuthMac.do?'
 

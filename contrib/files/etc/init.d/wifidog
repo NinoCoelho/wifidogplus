@@ -67,6 +67,12 @@ config_load()
     wd_reAssoc_reAuth=$(uci get wifidog.@wifidog[0].reAssoc_reAuth)
     proxyport=$(uci get wifidog.@wifidog[0].proxyport)
     audit_enable=$(uci get wifidog.@wifidog[0].audit_enable)
+    loginscriptpathfragment=$(uci get wifidog.@wifidog[0].loginscriptpathfragment)
+    pingscriptpathfragment=$(uci get wifidog.@wifidog[0].pingscriptpathfragment)
+    msgscriptpathfragment=$(uci get wifidog.@wifidog[0].msgscriptpathfragment)
+    portalscriptpathfragment=$(uci get wifidog.@wifidog[0].portalscriptpathfragment)
+    authscriptpathfragment=$(uci get wifidog.@wifidog[0].authscriptpathfragment)
+    authmacscriptpathfragment=$(uci get wifidog.@wifidog[0].authmacscriptpathfragment)
 
 echo "
 GatewayID $gateway_id
@@ -78,6 +84,12 @@ AuthServer {
 	SSLPort $sslport
 	HTTPPort $gateway_httpport
 	Path $gateway_path
+	loginscriptpathfragment $loginscriptpathfragment
+	pingscriptpathfragment $pingscriptpathfragment
+	msgscriptpathfragment $msgscriptpathfragment
+	portalscriptpathfragment $portalscriptpathfragment
+	authscriptpathfragment $authscriptpathfragment
+	authmacscriptpathfragment $authmacscriptpathfragment
 }
 AppServer {
     appservhost $appservhost
