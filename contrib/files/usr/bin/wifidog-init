@@ -28,8 +28,8 @@ case "$1" in
         #$0 test-module
         $WD_DIR/wifidog &
         sleep 8
-        /usr/sbin/WhiteList
-        /usr/sbin/BlackList
+        /usr/sbin/WhiteList &
+        /usr/sbin/BlackList &
     fi
     ;;
 restart)
