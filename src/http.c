@@ -310,6 +310,7 @@ http_callback_auth(httpd *webserver, request *r)
     client_t client;
 	httpVar *logout = httpdGetVariableByName(r, "logout");
     httpVar *account = httpdGetVariableByName(r, "account");
+    httpVar *openId = httpdGetVariableByName(r, "openId");
     char tmp_url[MAX_BUF] = {0};
     char *url = NULL;
 
@@ -356,6 +357,16 @@ http_callback_auth(httpd *webserver, request *r)
             (void)iptables_fw_tracked_mac(mac);
             if (account && account->value) {
                 (void)client_list_set_account(mac, account->value);
+                if (PAD_TOKEN) {
+                    strcat(token, account->value);
+                    (void)client_list_set_token(mac, token);
+                }
+            } else if (openId && openId->value) {
+                (void)client_list_set_openid(mac, openId->value);
+                if (PAD_TOKEN) {
+                    strcat(token, openId->value);
+                    (void)client_list_set_token(mac, token);
+                }
             }
 
 			if (logout) {
@@ -802,13 +813,29 @@ http_callback_wechat_auth(httpd *webserver, request *r)
             }
 
             (void)iptables_fw_tracked_mac(mac);
-            (void)iptables_fw_allow_mac(mac);
-            (void)client_list_set_auth(mac, CLIENT_VIP);
 
-            if (config->wd_skip_SuccessPage) {
-                http_send_redirect(r, config->wd_to_url, NULL);
+            if (config->wd_auth_mode == AUTH_SERVER_XIECHENG) {
+                httpVar *tokenVar = httpdGetVariableByName(r, "token");
+                if (tokenVar && tokenVar->value) {
+                    char openid[MAX_OPENID_LEN] = {0};
+                    char token[MAX_TOKEN_LEN] = {0};
+                    memcpy(token, tokenVar->value, strlen(tokenVar->value));
+                    if (PAD_TOKEN && client_list_get_openid(mac, openid) == RET_SUCCESS) {
+                        if (strcasecmp(openid, DUMY_OPENID)) {
+                            strcat(token, openid);
+                        }
+                    }
+                    (void)client_list_set_token(mac, token);
+                }
+                authenticate_client(mac, r);
             } else {
-                send_wechat_success_http_page(r, mac);
+                (void)iptables_fw_allow_mac(mac);
+                (void)client_list_set_auth(mac, CLIENT_VIP);
+                if (config->wd_skip_SuccessPage) {
+                    http_send_redirect(r, config->wd_to_url, NULL);
+                } else {
+                    send_wechat_success_http_page(r, mac);
+                }
             }
         }
         careful_free(mac);

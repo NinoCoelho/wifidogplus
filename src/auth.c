@@ -114,28 +114,7 @@ authenticate_client(char *mac, request *r)
 	auth_server = get_auth_server();
 
     memset((void *)&client, 0, sizeof(client_t));
-    if (!client_list_get_client(mac, &client)) {
-        if (client.auth > CLIENT_CHAOS) {
-            debug(LOG_DEBUG, "mac %s had authenticated", mac);
-            (void)iptables_fw_allow_mac(mac);
-            (void)client_list_set_last_updated(mac, time(NULL));
-            safe_asprintf(&urlFragment, "%sdev_name=%s&ip=%s&mac=%s&token=%s&incoming=%llu&outgoing=%llu&gw_id=%s&gw_address=%s&gw_port=%d",
-    			auth_server->authserv_portal_script_path_fragment,
-                client.hostname,
-		        client.ip,
-		        client.mac,
-		        client.token,
-		        client.counters.incoming,
-		        client.counters.outgoing,
-                config_get_config()->gw_id,
-                config_get_config()->gw_address,
-                config_get_config()->gw_port
-    		);
-    		http_send_redirect_to_auth(r, urlFragment, "Redirect to portal");
-    		careful_free(urlFragment);
-            return;
-        }
-    } else {
+    if (client_list_get_client(mac, &client) != RET_SUCCESS) {
         debug(LOG_ERR, "mac %s fail to get client info", mac);
         (void)client_list_add(mac);
         (void)client_list_set_ip(mac, r->clientAddr);
@@ -218,6 +197,10 @@ authenticate_client(char *mac, request *r)
             config_get_config()->gw_port
 		);
 		http_send_redirect_to_auth(r, urlFragment, "Redirect to portal");
+        if (config->audit_enable && client.onoffline == CLIENT_OFFLINE) {
+            (void)report_onoffline(mac, CLIENT_ONLINE);
+            (void)client_list_set_onoffline(mac, CLIENT_ONLINE);
+        }
 		careful_free(urlFragment);
 	    break;
 
@@ -237,6 +220,10 @@ authenticate_client(char *mac, request *r)
             config_get_config()->gw_port
 		);
 		http_send_redirect_to_auth(r, urlFragment, "Redirect to portal");
+        if (config->audit_enable && client.onoffline == CLIENT_OFFLINE) {
+            (void)report_onoffline(mac, CLIENT_ONLINE);
+            (void)client_list_set_onoffline(mac, CLIENT_ONLINE);
+        }
 		careful_free(urlFragment);
 		break;
 

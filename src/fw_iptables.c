@@ -458,9 +458,8 @@ iptables_fw_init(void)
 
 	iptables_do_command("-t nat -A " TABLE_WIFIDOG_OUTGOING " -j " TABLE_WIFIDOG_WIFI_TO_INTERNET);
 
-    if (config->wd_auth_mode == AUTH_LOCAL_WECHAT) {
-        iptables_do_command("-t nat -A " TABLE_WIFIDOG_WIFI_TO_INTERNET " -d %s -p tcp --dport 80 -j DNAT --to-destination %s:%u", "10.11.12.13", config->gw_address, config->gw_port);
-    }
+    iptables_do_command("-t nat -A " TABLE_WIFIDOG_WIFI_TO_INTERNET " -d %s -p tcp --dport 80 -j DNAT --to-destination %s:%u", "10.11.12.13", config->gw_address, config->gw_port);
+
 	if((proxy_port=config_get_config()->proxy_port) != 0){
 		debug(LOG_DEBUG,"Proxy port set, setting proxy rule");
 		iptables_do_command("-t nat -A " TABLE_WIFIDOG_WIFI_TO_INTERNET " -p tcp --dport 80 -m mark --mark 0x%u -j REDIRECT --to-port %u", FW_MARK_KNOWN, proxy_port);
@@ -790,9 +789,6 @@ int iptables_fw_allow_mac(const char *mac)
         return -1;
     }
     (void)client_list_set_allow_time(mac, time(NULL));
-    if (config->audit_enable) {
-        (void)report_onoffline(mac, CLIENT_ONLINE);
-    }
     pthread_mutex_unlock(&fw_allow_mac_mutex);
 
 	return rc;
@@ -828,9 +824,6 @@ int iptables_fw_deny_mac(const char *mac)
         return -1;
     }
     //(void)client_list_set_allow_time(mac, 0);
-    if (config->audit_enable) {
-        (void)report_onoffline(mac, CLIENT_OFFLINE);
-    }
     pthread_mutex_unlock(&fw_allow_mac_mutex);
 
 	return rc;

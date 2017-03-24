@@ -173,6 +173,7 @@ int client_access(char *mac)
 {
     int access;
     int auth;
+    int onoffline = 0;
 
     if(OK != cmm_client_access(mac, &access)) {
         debug(LOG_DEBUG, "fail to get auth status from auth server for [%s]", mac);
@@ -186,11 +187,23 @@ int client_access(char *mac)
         debug(LOG_DEBUG, "[%s] is VIP", mac);
         (void)client_list_set_auth(mac, CLIENT_VIP);
         (void)iptables_fw_allow_mac(mac);
+        if (config_get_config()->audit_enable
+            && client_list_get_onoffline(mac, &onoffline) == RET_SUCCESS
+            && onoffline == CLIENT_OFFLINE) {
+            (void)report_onoffline(mac, CLIENT_ONLINE);
+            (void)client_list_set_onoffline(mac, CLIENT_ONLINE);
+        }
         break;
     case 1: /* success, not VIP */
         debug(LOG_DEBUG, "[%s] auth success, but not VIP", mac);
         (void)client_list_set_auth(mac, CLIENT_COMMON);
         (void)iptables_fw_allow_mac(mac);
+        if (config_get_config()->audit_enable
+            && client_list_get_onoffline(mac, &onoffline) == RET_SUCCESS
+            && onoffline == CLIENT_OFFLINE) {
+            (void)report_onoffline(mac, CLIENT_ONLINE);
+            (void)client_list_set_onoffline(mac, CLIENT_ONLINE);
+        }
         break;
     default: /* fail */
         debug(LOG_DEBUG, "[%s] auth fail", mac);

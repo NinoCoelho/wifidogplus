@@ -13,6 +13,7 @@
 #include <syslog.h>
 #include <sys/time.h>
 #include <unistd.h>
+#include <ctype.h>
 
 #include <libubox/ustream.h>
 
@@ -303,6 +304,29 @@ void ubus_destory()
    //ubus_free(ubus_ctx); // would make a Segmentation fault, did not need to do free
 }
 
+#define AUTH_TYPE_LEN (2)
+static int parse_auth_type(char *token)
+{
+    int i;
+    char s_auth_type[AUTH_TYPE_LEN + 1] = {0};
+    int i_auth_type = -1;
+
+    if (token == NULL || strlen(token) < AUTH_TYPE_LEN) {
+        return -1;
+    }
+
+    for (i = 0; i < AUTH_TYPE_LEN; i++) {
+        if (!isdigit(token[i])) {
+            return -1;
+        }
+    }
+
+    memcpy(s_auth_type, token, AUTH_TYPE_LEN);
+    i_auth_type = atoi(s_auth_type);
+
+    return i_auth_type;
+}
+
 int report_onoffline(const char *mac, int onoffline_type)
 {
     client_t client;
@@ -326,11 +350,13 @@ int report_onoffline(const char *mac, int onoffline_type)
     blobmsg_add_string(&b, "extip", config->extip);
 	blobmsg_add_u32(&b, "rssi", client.rssi); /* CCC: int elem cannot be 0 */
     blobmsg_add_u32(&b, "authmode", config->wd_auth_mode);
+    //blobmsg_add_u32(&b, "authmode", parse_auth_type(auth_type, client.token));
     if (!strlen(client.account) || 0 == strncasecmp(client.account, DUMY_ACCOUNT, strlen(DUMY_ACCOUNT) + 1)) {
         /* counterfeit a phone */
         char phone[PHONE_NUMBER_LEN] = {0};
         (void)counterfeit_phone_num(phone);
         (void)client_list_set_account(client.mac, phone);
+        memcpy(client.account, phone, strlen(phone) + 1);
     }
     blobmsg_add_string(&b, "account", client.account);
 
