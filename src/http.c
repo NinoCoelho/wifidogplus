@@ -313,7 +313,7 @@ http_callback_auth(httpd *webserver, request *r)
     httpVar *openId = httpdGetVariableByName(r, "openId");
     char tmp_url[MAX_BUF] = {0};
     char *url = NULL;
-
+	s_config *config = config_get_config();
     snprintf(tmp_url, (sizeof(tmp_url) - 1), "http://%s%s%s%s",
     r->request.host,
     r->request.path,
@@ -357,13 +357,13 @@ http_callback_auth(httpd *webserver, request *r)
             (void)iptables_fw_tracked_mac(mac);
             if (account && account->value) {
                 (void)client_list_set_account(mac, account->value);
-                if (PAD_TOKEN) {
+                if (config->pad_token) {
                     strcat(token, account->value);
                     (void)client_list_set_token(mac, token);
                 }
             } else if (openId && openId->value) {
                 (void)client_list_set_openid(mac, openId->value);
-                if (PAD_TOKEN) {
+                if (config->pad_token) {
                     strcat(token, openId->value);
                     (void)client_list_set_token(mac, token);
                 }
@@ -371,7 +371,6 @@ http_callback_auth(httpd *webserver, request *r)
 
 			if (logout) {
 			    t_authresponse  authresponse;
-			    s_config *config = config_get_config();
 			    unsigned long long incoming;
 			    unsigned long long outgoing;
 			    char *urlFragment = NULL;
@@ -820,7 +819,7 @@ http_callback_wechat_auth(httpd *webserver, request *r)
                     char openid[MAX_OPENID_LEN] = {0};
                     char token[MAX_TOKEN_LEN] = {0};
                     memcpy(token, tokenVar->value, strlen(tokenVar->value));
-                    if (PAD_TOKEN && client_list_get_openid(mac, openid) == RET_SUCCESS) {
+                    if (config->pad_token && client_list_get_openid(mac, openid) == RET_SUCCESS) {
                         if (strcasecmp(openid, DUMY_OPENID)) {
                             strcat(token, openid);
                         }

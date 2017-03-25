@@ -47,6 +47,7 @@
 
 static int fw_backup_restore_mac(char *mac, char *ip, int auth, unsigned int fw_state)
 {
+	s_config *config = config_get_config();
     time_t current_time = time(NULL);
     client_t client;
 
@@ -68,17 +69,25 @@ static int fw_backup_restore_mac(char *mac, char *ip, int auth, unsigned int fw_
         (void)iptables_fw_untracked_mac(mac);   /* cannot do it first. untracked first, because can not confirm that whether the ip in iptables or not now */
         (void)iptables_fw_tracked_mac(mac);
     }
-#if ALLOW_FIRST
-    if (auth >= CLIENT_CHAOS || CLIENT_ALLOWED == fw_state)
-#else
-    if (auth > CLIENT_CHAOS || CLIENT_ALLOWED == fw_state)
-#endif
-    {
-        (void)iptables_fw_deny_mac(mac);        /* deny first, because can not confirm that whether the mac in iptables or not now */
-        (void)iptables_fw_allow_mac(mac);
-        if (auth < CLIENT_CONFIG) {
-            (void)client_list_set_last_updated(mac, current_time);
-        }
+    if (config ->allow_first){
+    	if (auth >= CLIENT_CHAOS || CLIENT_ALLOWED == fw_state)
+		{
+	        (void)iptables_fw_deny_mac(mac);        /* deny first, because can not confirm that whether the mac in iptables or not now */
+	        (void)iptables_fw_allow_mac(mac);
+	        if (auth < CLIENT_CONFIG) {
+	            (void)client_list_set_last_updated(mac, current_time);
+	        }
+	    }
+    }
+    else{
+    	if (auth > CLIENT_CHAOS || CLIENT_ALLOWED == fw_state)
+	    {
+	        (void)iptables_fw_deny_mac(mac);        /* deny first, because can not confirm that whether the mac in iptables or not now */
+	        (void)iptables_fw_allow_mac(mac);
+	        if (auth < CLIENT_CONFIG) {
+	            (void)client_list_set_last_updated(mac, current_time);
+	        }
+	    }
     }
 
     return 0;

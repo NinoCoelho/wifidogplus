@@ -56,6 +56,8 @@
 #define DEFAULT_CHECKINTERVAL 60
 #define DEFAULT_AUTO_SSID 1
 #define DEFAULT_AUTO_PASSWORD 1
+#define DEFAULT_ALLOW_FIRST 0
+#define DEFAULT_PAD_TOKEN 1
 #define DEFAULT_AUTOWIRELESSPW (1)
 #define DEFAULT_QOSENABLE (1)
 #define DEFAULT_UPLINKVIP (100)
@@ -194,6 +196,8 @@ typedef struct {
 				     must be re-authenticated */
     int autoSsid;
     int autoPassword;
+	int allow_first;
+	int pad_token;
     int autoWirelessPw;
     int qosEnable;
     int uplinkVip;

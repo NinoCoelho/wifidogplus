@@ -102,6 +102,8 @@ typedef enum {
 	oThreadWatchdogTimeout,
 	oAutoSsid,
 	oAutoPassword,
+	oAllow_First,
+	oPad_Token,
 	oAuto_wireless_pw,
     oQos_enable,
     oUplink_vip,
@@ -151,10 +153,10 @@ static const struct {
 	{ "clienttimeout",      	oClientTimeout },
 	{ "checkinterval",      	oCheckInterval },
 	{ "Thread_watchdog_timeout", oThreadWatchdogTimeout },
-    { "Auto_ssid", oAutoSsid},
-    { "Auto_password", oAutoPassword},
     { "Auto_ssid",              oAutoSsid },
     { "Auto_password",          oAutoPassword },
+	{ "Allow_first",            oAllow_First },
+	{ "Pad_token",              oPad_Token },
     { "Auto_wireless_pw",       oAuto_wireless_pw },
     { "Qos_enable",             oQos_enable },
     { "Uplink_vip",             oUplink_vip },
@@ -241,6 +243,8 @@ config_init(void)
 	config.clienttimeout = DEFAULT_CLIENTTIMEOUT;
     config.autoSsid = DEFAULT_AUTO_SSID;
     config.autoPassword = DEFAULT_AUTO_PASSWORD;
+	config.allow_first = DEFAULT_ALLOW_FIRST;
+	config.pad_token = DEFAULT_PAD_TOKEN;
     config.autoWirelessPw = DEFAULT_AUTOWIRELESSPW;
     config.qosEnable = DEFAULT_QOSENABLE;
     config.uplinkVip = DEFAULT_UPLINKVIP;
@@ -993,6 +997,12 @@ config_read(const char *filename)
                 case oAutoPassword:
                     sscanf(p1, "%d", &config.autoPassword);
                     break;
+				case oAllow_First:
+					sscanf(p1, "%d", &config.allow_first);
+					break;
+				case oPad_Token:
+					sscanf(p1, "%d", &config.pad_token);
+					break;
                 case oAuto_wireless_pw:
                     sscanf(p1, "%d", &config.autoWirelessPw);
                     break;
