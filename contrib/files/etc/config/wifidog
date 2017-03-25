@@ -40,12 +40,12 @@ config wifidog 'wifidog'
 	option proxyport 0
 	option separate_wired 1
 	option audit_enable 0
-	option loginscriptpathfragment 'wifi_toLogin.do?'
+	option loginscriptpathfragment 'wifi_entrance.do?'
 	option pingscriptpathfragment 'wifi_doPing.do?'
 	option msgscriptpathfragment 'wifi_doMsg.do?'
 	option portalscriptpathfragment 'wifi_toCallBack.do?'
 	option authscriptpathfragment 'wifi_toAuth.do?'
-	option authmacscriptpathfragment 'wifi_toAuthMac.do?'
+	option authmacscriptpathfragment 'wifi_toAuthMacRoam.do?'
 	option allow_first 0
 	option pad_token 1
 
