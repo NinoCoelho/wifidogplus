@@ -46,4 +46,6 @@ config wifidog 'wifidog'
 	option portalscriptpathfragment 'wifi_toCallBack.do?'
 	option authscriptpathfragment 'wifi_toAuth.do?'
 	option authmacscriptpathfragment 'wifi_toAuthMac.do?'
+	option allow_first 0
+	option pad_token 1
 

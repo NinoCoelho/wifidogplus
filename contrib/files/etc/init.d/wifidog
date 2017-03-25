@@ -73,6 +73,8 @@ config_load()
     portalscriptpathfragment=$(uci get wifidog.@wifidog[0].portalscriptpathfragment)
     authscriptpathfragment=$(uci get wifidog.@wifidog[0].authscriptpathfragment)
     authmacscriptpathfragment=$(uci get wifidog.@wifidog[0].authmacscriptpathfragment)
+    allow_first=$(uci get wifidog.@wifidog[0].allow_first)
+    pad_token=$(uci get wifidog.@wifidog[0].pad_token)
 
 echo "
 GatewayID $gateway_id
@@ -123,6 +125,8 @@ Wd_skip_SuccessPage $wd_skip_SuccessPage
 Wd_reAssoc_reAuth $wd_reAssoc_reAuth
 proxyport $proxyport
 audit_enable $audit_enable
+Allow_first $allow_first
+Pad_token $pad_token
 
 FirewallRuleSet global {
     FirewallRule allow to 168.95.1.1

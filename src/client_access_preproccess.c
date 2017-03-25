@@ -132,9 +132,8 @@ int thread_client_access_preproccess(char *arg)
 
             sem_post(&sem_client_access_preproccess);
             (void)client_list_set_last_updated(mac, current_time);
-#if ALLOW_FIRST
-            (void)iptables_fw_allow_mac(mac);
-#endif
+            if (config ->allow_first)
+            	(void)iptables_fw_allow_mac(mac);
         }
     }
 

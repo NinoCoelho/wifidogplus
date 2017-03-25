@@ -72,8 +72,8 @@
 #define SUCCESS_TO_RECENT_URL               0
 
 /* allow first, have a better experience; deny first, save more traffic */
-#define ALLOW_FIRST                         0
-#define PAD_TOKEN                           1
+//#define ALLOW_FIRST                         0
+//#define PAD_TOKEN                           1
 
 //define OFFLINE_CLEAR_FW
 
