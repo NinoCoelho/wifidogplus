@@ -765,6 +765,7 @@ static void uciSetSSID5(char *value)
 
 #if (GET_WHITE_FROM_UBUS)
 #define WHITE_URL_PREFIX "white_list="
+#define WHITE_URL_SUFFIX "\r\n"
 static void parse_white_url(struct ubus_request *req, int type, struct blob_attr *msg)
 {
     int ret = 0;
@@ -774,6 +775,7 @@ static void parse_white_url(struct ubus_request *req, int type, struct blob_attr
     struct json_object *get_object = NULL;
     struct json_object *white_url_object = NULL;
     char *reponse = NULL;
+    int pos = 0;
 
     data = blobmsg_format_json(msg, true);
     if(!data) {
@@ -803,9 +805,12 @@ static void parse_white_url(struct ubus_request *req, int type, struct blob_attr
         goto RET_2;
     }
 
-    reponse = safe_malloc(strlen(white_url) + strlen(WHITE_URL_PREFIX) + 1);
-    memcpy(reponse, WHITE_URL_PREFIX, strlen(WHITE_URL_PREFIX));
-    memcpy(reponse + strlen(WHITE_URL_PREFIX), white_url, strlen(white_url));
+    reponse = safe_malloc(strlen(white_url) + strlen(WHITE_URL_PREFIX) + strlen(WHITE_URL_SUFFIX) + 1);
+    memcpy(reponse + pos, WHITE_URL_PREFIX, strlen(WHITE_URL_PREFIX));
+    pos += strlen(WHITE_URL_PREFIX);
+    memcpy(reponse + pos, white_url, strlen(white_url));
+    pos += strlen(white_url);
+    memcpy(reponse + pos, WHITE_URL_SUFFIX, strlen(WHITE_URL_SUFFIX));
     setWhiteurl(reponse);
 
 RET_2:
