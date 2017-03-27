@@ -35,6 +35,11 @@
 #include <uci.h>
 #endif
 
+#if (GET_WHITE_FROM_UBUS)
+#include <libubox/blobmsg_json.h>
+#include "wifiga_ubus_client.h"
+static void parse_white_url(struct ubus_request *req, int type, struct blob_attr *msg);
+#endif
 
 #ifdef THIS_THREAD_NAME
 #undef THIS_THREAD_NAME
@@ -105,10 +110,14 @@ void thread_white_list(char *arg)
 
     while (1) {
         pthread_watchdog_feed(THIS_THREAD_NAME);
+#if (GET_WHITE_FROM_UBUS)
+        ubus_call("wifiga", "rcfg", NULL, parse_white_url, NULL);
+#else
         if ( cmm_Whitelist() != 0)
         {
             printf( "White list set fail \n");
         }
+#endif
         pthread_watchdog_feed(THIS_THREAD_NAME);
         /* Sleep for config.checkinterval seconds... */
         timeout.tv_sec = time(NULL) + config_get_config()->checkinterval;
@@ -752,6 +761,60 @@ static void uciSetSSID5(char *value)
 {
 }
 
+#endif
+
+#if (GET_WHITE_FROM_UBUS)
+#define WHITE_URL_PREFIX "white_list="
+static void parse_white_url(struct ubus_request *req, int type, struct blob_attr *msg)
+{
+    int ret = 0;
+    char *data;
+    char *white_url = NULL;
+    int i;
+    struct json_object *get_object = NULL;
+    struct json_object *white_url_object = NULL;
+    char *reponse = NULL;
+
+    data = blobmsg_format_json(msg, true);
+    if(!data) {
+        debug(LOG_ERR, "No data");
+        ret = -1;
+        goto RET_0;
+    }
+	debug(LOG_DEBUG, "msg [%s]", data);
+
+    get_object = json_tokener_parse(data);
+    if(!get_object) {
+        debug(LOG_ERR, "No get_object");
+        ret = -1;
+        goto RET_1;
+    }
+
+    white_url_object = json_object_object_get(get_object, "white_url");
+    if(!white_url_object) {
+        debug(LOG_ERR, "No white_url_object");
+        ret = -1;
+        goto RET_2;
+    }
+    white_url = (char *)json_object_get_string(white_url_object);
+    if(!white_url) {
+        debug(LOG_ERR, "No white_url");
+        ret = -1;
+        goto RET_2;
+    }
+
+    reponse = safe_malloc(strlen(white_url) + strlen(WHITE_URL_PREFIX) + 1);
+    memcpy(reponse, WHITE_URL_PREFIX, strlen(WHITE_URL_PREFIX));
+    memcpy(reponse + strlen(WHITE_URL_PREFIX), white_url, strlen(white_url));
+    setWhiteurl(reponse);
+
+RET_2:
+    json_object_put(get_object);
+RET_1:
+    careful_free(data);
+RET_0:
+    return;
+}
 #endif
 
 void TestWhitelist_func()

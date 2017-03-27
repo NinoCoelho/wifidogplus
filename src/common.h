@@ -61,7 +61,7 @@
 #define OPEN_THREAD_WDCTL                   1
 #define OPEN_THREAD_PING                    1
 #define OPEN_THREAD_WIFIGA_UBUS_CLIENT      1
-#define OPEN_THREAD_WHITE_LIST              0
+#define OPEN_THREAD_WHITE_LIST              1
 #define OPEN_THREAD_EXG_PROTOCOL            0
 #define OPEN_THREAD_GETADDRESS              (0)
 
@@ -74,7 +74,7 @@
 /* allow first, have a better experience; deny first, save more traffic */
 //#define ALLOW_FIRST                         0
 //#define PAD_TOKEN                           1
-
+#define GET_WHITE_FROM_UBUS                 1
 //define OFFLINE_CLEAR_FW
 
 /* Anti DoS support */

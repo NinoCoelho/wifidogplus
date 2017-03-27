@@ -23,7 +23,7 @@ void wifiga_ubus_client_exit(void);
 
 int ubus_send(const char *type, struct blob_attr *data);
 
-int ubus_call(const char *path, const char *method, struct blob_attr *data, void *ret);
+int ubus_call(const char *path, const char *method, struct blob_attr *data, ubus_data_handler_t cb, void *ret);
 
 int ubus_init(void);
 

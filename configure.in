@@ -98,6 +98,8 @@ AC_HAVE_LIBRARY(rt)
 AC_HAVE_LIBRARY(curl)
 AC_HAVE_LIBRARY(ubus)
 AC_HAVE_LIBRARY(ubox)
+AC_HAVE_LIBRARY(blobmsg_json)
+AC_HAVE_LIBRARY(json-c)
 echo "libhttpd dependencies check complete"
 
 AC_OUTPUT( 		Makefile 

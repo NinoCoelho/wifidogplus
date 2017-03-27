@@ -272,7 +272,7 @@ static void receive_ubus_data(struct ubus_request *req, int type, struct blob_at
     char *ret = (char *)req->priv;
 }
 
-int ubus_call(const char *path, const char *method, struct blob_attr *data, void *ret)
+int ubus_call(const char *path, const char *method, struct blob_attr *data, ubus_data_handler_t cb, void *ret)
 {
     uint32_t id;
     int      _ret;
@@ -288,7 +288,7 @@ int ubus_call(const char *path, const char *method, struct blob_attr *data, void
         return -1;
     }
 
-    return ubus_invoke(ubus_ctx, id, method, data, receive_ubus_data, ret, 1000);
+    return ubus_invoke(ubus_ctx, id, method, data, cb, ret, 1000);
 }
 
 int ubus_init(void)
@@ -366,7 +366,7 @@ int report_onoffline(const char *mac, int onoffline_type)
             client_list_set_allow_time(mac, client.allow_time);
         }
         blobmsg_add_u64(&b, "ontime", client.allow_time);
-        ret = ubus_call("wifiga", "online", b.head, (void *)mac);
+        ret = ubus_call("wifiga", "online", b.head, receive_ubus_data, (void *)mac);
     } else {
         if (!client.allow_time) {
             client.allow_time = time(NULL) - 600; /* may be something wrong, counterfeit ontime of 10 minutes */
@@ -374,7 +374,7 @@ int report_onoffline(const char *mac, int onoffline_type)
         }
         blobmsg_add_u64(&b, "ontime", client.allow_time);
         blobmsg_add_u64(&b, "offtime", time(NULL));
-        ret = ubus_call("wifiga", "offline", b.head, (void *)mac);
+        ret = ubus_call("wifiga", "offline", b.head, receive_ubus_data, (void *)mac);
     }
 
     return ret;
